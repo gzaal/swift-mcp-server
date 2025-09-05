@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-check:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Install Swift tools (Homebrew)
+        run: |
+          brew install swift-format swiftformat swiftlint
+
+      - name: Update cache (swift.update.sync)
+        run: |
+          node -e "import('./dist/tools/update.js').then(m=>m.updateSync()).then(msg=>{console.log(msg)},err=>{console.error(err);process.exit(1)})"
+
+      - name: Format check via swift.format.apply
+        run: |
+          node -e "import('./dist/tools/format.js').then(m=>m.formatApply({code:'struct A{}', swiftVersion:'6', assumeFilepath:'Main.swift'})).then(r=>{console.log(r); if(!r.ok){process.exit(1)}},e=>{console.error(e);process.exit(1)})"
+
+      - name: SwiftLint on sample file
+        run: |
+          cat > /tmp/ci.swift <<'SWIFT'\nimport Foundation\nstruct person_name { let URL:String }\nfunc DoHTTPCall() { print(\"x\") }\nenum Status { case OK, not_found }\nSWIFT\n          node -e "import('./dist/tools/lint.js').then(m=>m.lintRun({path:'/tmp/ci.swift'})).then(r=>{console.log(r); if(r.ok!==true && r.ok!==false){process.exit(1)}},e=>{console.error(e);process.exit(1)})"
+
