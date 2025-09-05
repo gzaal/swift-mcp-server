@@ -1,5 +1,7 @@
 Swift MCP Server (Swift docs + evolution + lint/format)
 
+[![CI](https://github.com/gzaal/swift-mcp-server/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gzaal/swift-mcp-server/actions/workflows/ci.yml)
+
 Quick start (macOS)
 
 - Install dependencies:
