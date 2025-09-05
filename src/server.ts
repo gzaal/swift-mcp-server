@@ -12,7 +12,7 @@ import { updateSync } from "./tools/update.js";
 const mcp = new McpServer({ name: "swift-mcp-server", version: "0.1.0" });
 
 mcp.registerTool(
-  "swift.docs.search",
+  "swift_docs_search",
   {
     description: "Search Swift docs (TSPL + API Design Guidelines)",
     inputSchema: { query: z.string(), limit: z.number().optional() },
@@ -24,7 +24,7 @@ mcp.registerTool(
 );
 
 mcp.registerTool(
-  "swift.evolution.lookup",
+  "swift_evolution_lookup",
   {
     description: "Lookup Swift Evolution proposals by ID or keyword",
     inputSchema: { query: z.string(), limit: z.number().optional() },
@@ -36,7 +36,7 @@ mcp.registerTool(
 );
 
 mcp.registerTool(
-  "swift.lint.run",
+  "swift_lint_run",
   {
     description: "Run SwiftLint on a path",
     inputSchema: { path: z.string().optional(), configPath: z.string().optional(), strict: z.boolean().optional() },
@@ -48,7 +48,7 @@ mcp.registerTool(
 );
 
 mcp.registerTool(
-  "swift.format.apply",
+  "swift_format_apply",
   {
     description: "Format Swift code using swift-format or SwiftFormat",
     inputSchema: { code: z.string(), swiftVersion: z.string().optional(), assumeFilepath: z.string().optional() },
@@ -64,7 +64,7 @@ mcp.registerTool(
 );
 
 mcp.registerTool(
-  "swift.guidelines.check",
+  "swift_guidelines_check",
   {
     description: "Run heuristic Swift API Guidelines checks on code",
     inputSchema: { code: z.string() },
@@ -76,7 +76,7 @@ mcp.registerTool(
 );
 
 mcp.registerTool(
-  "swift.update.sync",
+  "swift_update_sync",
   {
     description: "Mirror swift-evolution and swift-book into .cache for offline queries",
     inputSchema: {},

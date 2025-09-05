@@ -13,12 +13,12 @@ Quick start (macOS)
 
 Tools
 
-- `swift.docs.search`: search TSPL (swift-book) and API Design Guidelines.
-- `swift.evolution.lookup`: lookup Swift Evolution proposals by ID or keyword.
-- `swift.lint.run`: run SwiftLint if installed.
-- `swift.format.apply`: format Swift source via swift-format or SwiftFormat.
-- `swift.guidelines.check`: heuristic API guideline checks on Swift code.
-- `swift.update.sync`: mirror swift-evolution and swift-book into `.cache`.
+- `swift_docs_search`: search TSPL (swift-book) and API Design Guidelines.
+- `swift_evolution_lookup`: lookup Swift Evolution proposals by ID or keyword.
+- `swift_lint_run`: run SwiftLint if installed.
+- `swift_format_apply`: format Swift source via swift-format or SwiftFormat.
+- `swift_guidelines_check`: heuristic API guideline checks on Swift code.
+- `swift_update_sync`: mirror swift-evolution and swift-book into `.cache`.
 
 Docker
 
@@ -31,7 +31,7 @@ Full Docker image (with tools)
 
 - Build: `npm run docker:build:full` (uses Dockerfile.full)
 - Run: `npm run docker:run:full`
-  - Mounts `.cache` so `swift.update.sync` persists across runs
+  - Mounts `.cache` so `swift_update_sync` persists across runs
 - Includes: `swift-format`, `swiftformat`, `swiftlint` built for Linux
 - Base: `swift:6.0-jammy` with Node 20 installed
 
@@ -46,5 +46,5 @@ MCP wiring
 
 Cache & Offline
 
-- Run `swift.update.sync` first to populate `.cache` with `swift-evolution` and
-  `swift-book`. `swift.docs.search` and `swift.evolution.lookup` use this cache.
+- Run `swift_update_sync` first to populate `.cache` with `swift-evolution` and
+  `swift-book`. `swift_docs_search` and `swift_evolution_lookup` use this cache.

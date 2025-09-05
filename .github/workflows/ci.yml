@@ -22,6 +22,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Restore Swift content cache (.cache)
+        uses: actions/cache@v4
+        with:
+          path: .cache
+          key: swift-mcp-cache-v1-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            swift-mcp-cache-v1-${{ runner.os }}-
+
       - name: Build
         run: npm run build
 
@@ -29,15 +37,28 @@ jobs:
         run: |
           brew install swift-format swiftformat swiftlint
 
-      - name: Update cache (swift.update.sync)
+      - name: Update cache (swift_update_sync)
         run: |
           node -e "import('./dist/tools/update.js').then(m=>m.updateSync()).then(msg=>{console.log(msg)},err=>{console.error(err);process.exit(1)})"
 
-      - name: Format check via swift.format.apply
+      - name: Smoke test docs search
+        run: |
+          node -e "import('./dist/tools/docs.js').then(m=>m.docsSearch({query:'String',limit:1})).then(r=>{console.log(r); if(!Array.isArray(r) || r.length===0){process.exit(1)}},e=>{console.error(e);process.exit(1)})"
+
+      - name: Smoke test evolution lookup
+        run: |
+          node -e "import('./dist/tools/evolution.js').then(m=>m.evolutionLookup({query:'SE-0001',limit:1})).then(r=>{console.log(r); if(!Array.isArray(r) || r.length===0){process.exit(1)}},e=>{console.error(e);process.exit(1)})"
+
+      - name: Format check via swift_format_apply
         run: |
           node -e "import('./dist/tools/format.js').then(m=>m.formatApply({code:'struct A{}', swiftVersion:'6', assumeFilepath:'Main.swift'})).then(r=>{console.log(r); if(!r.ok){process.exit(1)}},e=>{console.error(e);process.exit(1)})"
 
       - name: SwiftLint on sample file
         run: |
-          cat > /tmp/ci.swift <<'SWIFT'\nimport Foundation\nstruct person_name { let URL:String }\nfunc DoHTTPCall() { print(\"x\") }\nenum Status { case OK, not_found }\nSWIFT\n          node -e "import('./dist/tools/lint.js').then(m=>m.lintRun({path:'/tmp/ci.swift'})).then(r=>{console.log(r); if(r.ok!==true && r.ok!==false){process.exit(1)}},e=>{console.error(e);process.exit(1)})"
-
+          printf '%s\n' \
+            'import Foundation' \
+            'struct person_name { let URL:String }' \
+            'func DoHTTPCall() { print("x") }' \
+            'enum Status { case OK, not_found }' \
+            > /tmp/ci.swift
+          node -e "import('./dist/tools/lint.js').then(m=>m.lintRun({path:'/tmp/ci.swift'})).then(r=>{console.log(r); if(!r.ok){process.exit(1)}},e=>{console.error(e);process.exit(1)})"
