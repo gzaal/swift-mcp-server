@@ -1,0 +1,31 @@
+{
+  "name": "swift-mcp-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MCP server exposing Swift docs search, evolution lookup, lint, format, and guidelines checks.",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "inspector": "mcp-inspector node dist/server.js",
+    "inspector:no-auth": "DANGEROUSLY_OMIT_AUTH=true mcp-inspector node dist/server.js",
+    "docker:build:full": "docker build -f Dockerfile.full -t swift-mcp-server:full .",
+    "docker:run:full": "docker run --rm -it -v $(pwd)/.cache:/app/.cache swift-mcp-server:full",
+    "prepare": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.5",
+    "fast-glob": "^3.3.2",
+    "strip-ansi": "^7.1.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/inspector": "^0.16.6",
+    "tsx": "^4.15.7",
+    "typescript": "^5.6.2"
+  }
+}

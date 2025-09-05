@@ -1,0 +1,59 @@
+## Full image with Swift linters/formatters + Node runtime
+# Includes: swift-format, SwiftFormat, SwiftLint
+
+FROM swift:6.0-jammy AS build
+
+ARG SWIFT_FORMAT_TAG=601.0.0
+ARG SWIFTFORMAT_TAG=0.57.2
+ARG SWIFTLINT_TAG=0.60.0
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git curl unzip ca-certificates pkg-config libssl-dev zlib1g-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/build
+
+# Build swift-format
+RUN git clone --depth 1 --branch "${SWIFT_FORMAT_TAG}" https://github.com/apple/swift-format.git && \
+    cd swift-format && \
+    swift build -c release && \
+    cp .build/release/swift-format /usr/local/bin/swift-format
+
+# Build SwiftFormat
+RUN git clone --depth 1 --branch "${SWIFTFORMAT_TAG}" https://github.com/nicklockwood/SwiftFormat.git && \
+    cd SwiftFormat && \
+    swift build -c release && \
+    cp .build/release/swiftformat /usr/local/bin/swiftformat
+
+# Build SwiftLint
+RUN git clone --depth 1 --branch "${SWIFTLINT_TAG}" https://github.com/realm/SwiftLint.git && \
+    cd SwiftLint && \
+    swift build -c release --product swiftlint && \
+    cp .build/release/swiftlint /usr/local/bin/swiftlint
+
+FROM swift:6.0-jammy AS runtime
+
+# Install Node 20 for the MCP server runtime
+RUN apt-get update && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y --no-install-recommends nodejs git ca-certificates curl && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy built tools
+COPY --from=build /usr/local/bin/swift-format /usr/local/bin/swift-format
+COPY --from=build /usr/local/bin/swiftformat /usr/local/bin/swiftformat
+COPY --from=build /usr/local/bin/swiftlint /usr/local/bin/swiftlint
+
+# App deps
+COPY package.json tsconfig.json ./
+RUN npm install --omit=dev
+
+# Sources
+COPY src ./src
+RUN npm run build
+
+# Default command
+CMD ["node", "dist/server.js"]
+
