@@ -9,9 +9,12 @@ export type AppleDocsSearchInput = { query: string; frameworks?: string[]; limit
 export type AppleDocHit = {
   symbol: string;
   framework?: string;
+  kind?: string;
+  id?: string;
   summary?: string;
   snippet?: string;
   url?: string;
+  topics?: string[];
   takeaways?: string[];
   path?: string;
 };
@@ -37,6 +40,9 @@ function doccURLToWeb(u?: string): string | undefined {
   if (m) {
     return `https://developer.apple.com/documentation/${m[1]}`;
   }
+  // relative developer docs path
+  if (u.startsWith("documentation/")) return `https://developer.apple.com/${u}`;
+  if (u.startsWith("/documentation/")) return `https://developer.apple.com${u}`;
   // Some docsets store referenceURL directly
   return undefined;
 }
@@ -105,6 +111,43 @@ function inferFrameworkFromJSON(js: any): string | undefined {
   return js?.metadata?.module?.name || js?.module?.name || undefined;
 }
 
+function extractKind(js: any): string | undefined {
+  return js?.symbolKind || js?.kind || js?.metadata?.role || undefined;
+}
+
+function extractTopics(js: any): string[] {
+  const topics: string[] = [];
+  const ts = js?.topicSections;
+  if (Array.isArray(ts)) {
+    for (const sec of ts) {
+      if (sec?.title) topics.push(String(sec.title));
+    }
+  }
+  const secs = js?.sections;
+  if (Array.isArray(secs)) {
+    for (const s of secs) {
+      if (s?.title) topics.push(String(s.title));
+    }
+  }
+  return Array.from(new Set(topics));
+}
+
+function urlFromReferences(js: any, fallbackTitle?: string): string | undefined {
+  const refs = js?.references;
+  if (!refs || typeof refs !== "object") return undefined;
+  const values = Object.values(refs) as any[];
+  // Prefer refs whose title matches symbol
+  const titleLc = (fallbackTitle || "").toLowerCase();
+  const preferred = values.find((r) => (r?.title || "").toLowerCase() === titleLc && (r?.url));
+  if (preferred) return doccURLToWeb(preferred.url);
+  // Otherwise pick any symbol/article with a url under documentation/
+  for (const r of values) {
+    const url = r?.url as string | undefined;
+    if (url && /(^|\/)documentation\//.test(url)) return doccURLToWeb(url);
+  }
+  return undefined;
+}
+
 function normalizeSymbol(s: string): string {
   return s
     .replace(/\(.*?\)/g, "") // drop parameter lists
@@ -144,6 +187,8 @@ export async function appleDocsSearch({ query, frameworks, limit = 5 }: AppleDoc
     try {
       let framework = deriveFrameworkFromPath(m.path);
       let symbol = deriveSymbolFromPath(m.path);
+      let kind: string | undefined;
+      let id: string | undefined;
       let summary: string | undefined = m.excerpt;
       let snippet: string | undefined;
       let url: string | undefined;
@@ -153,22 +198,42 @@ export async function appleDocsSearch({ query, frameworks, limit = 5 }: AppleDoc
         const jTitle = js.title || js.metadata?.title || js.identifier?.title;
         const jSummary = extractSummary(js);
         const jSnippet = extractDeclarationSnippet(js);
-        const jURL = doccURLToWeb(js.identifier?.url) || js.url || js.referenceURL;
+        const jURL = doccURLToWeb(js.identifier?.url) || urlFromReferences(js, jTitle) || js.url || js.referenceURL;
         const jFramework = inferFrameworkFromJSON(js) || framework;
+        const jKind = extractKind(js);
+        const jTopics = extractTopics(js);
+        const jId = js.identifier?.url || js.identifier?.identifier || undefined;
         if (jTitle) symbol = String(jTitle);
         if (jSummary) summary = jSummary;
         if (jSnippet) snippet = jSnippet;
         if (jURL) url = jURL;
         framework = jFramework;
+        kind = jKind;
+        id = jId;
+        // attach topics via takeaways field or separate
+        if (jTopics && jTopics.length) {
+          // we'll attach as topics field on the hit
+        }
       } else if (m.path.endsWith(".md") || m.path.endsWith(".markdown")) {
         const txt = await readFile(m.path, "utf8");
         const codeMatch = txt.match(/```[\s\S]*?```/);
         if (codeMatch) snippet = codeMatch[0].replace(/```[a-zA-Z]*\n?|```/g, "").trim();
       }
-      const key = `${(framework || "").toLowerCase()}|${(symbol || "").toLowerCase()}`;
+      const key = `${(framework || "").toLowerCase()}|${(id || symbol || "").toLowerCase()}`;
       if (dedupe.has(key)) continue;
       dedupe.add(key);
-      out.push({ symbol, framework, summary, snippet, url, path: m.path, takeaways: [] });
+      const topics = extractTopics as any; // type helper noop
+      const hit: AppleDocHit = { symbol, framework, kind, id, summary, snippet, url, path: m.path, takeaways: [] };
+      // try to add topics when available (only for JSON case above)
+      if (m.path.endsWith(".json")) {
+        const txt2 = await readFile(m.path, "utf8");
+        try {
+          const js2 = JSON.parse(txt2);
+          const tlist = extractTopics(js2);
+          if (tlist && tlist.length) hit.topics = tlist;
+        } catch {}
+      }
+      out.push(hit);
     } catch {
       // ignore parse errors
     }
