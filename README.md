@@ -16,7 +16,7 @@ Quick start (macOS)
 Tools
 
 - `swift_docs_search`: search TSPL (swift-book) and API Design Guidelines.
-- `apple_docs_search`: search local Apple DocC/docsets (AppKit/SwiftUI/Foundation...).
+- `apple_docs_search`: search local Apple DocC/docsets (AppKit/SwiftUI/Foundation...), supports filters: `frameworks`, `kinds`, `topics`.
 - `swift_evolution_lookup`: lookup Swift Evolution proposals by ID or keyword.
 - `swift_lint_run`: run SwiftLint if installed.
 - `swift_format_apply`: format Swift source via swift-format or SwiftFormat.
@@ -59,3 +59,4 @@ Cache & Offline
   - Place DocC/Dash docsets under `.cache/apple-docs/<Framework>/...` or run `swift_update_sync` to fetch a small HIG snapshot into `.cache/hig`.
   - Curated patterns live in `content/patterns/*.yaml` and symbol aliases in `content/symbols/aliases.yaml`.
   - A scheduled workflow refreshes HIG weekly; use `workflow_dispatch` to run it on-demand.
+  - The first successful `swift_update_sync` will build a MiniSearch index for Apple docs into `.cache/index/apple-docs.json`.

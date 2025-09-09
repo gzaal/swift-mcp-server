@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import { ensureCacheDir, pathExists } from "../utils/cache.js";
 import { runCommand } from "../utils/exec.js";
+import { buildAppleDocsIndex, saveAppleDocsIndex } from "../utils/apple_index.js";
 
 async function gitCloneOrPull(repo: string, destSubdir: string) {
   const base = await ensureCacheDir();
@@ -58,6 +59,19 @@ export async function updateSync(): Promise<string> {
     steps.push("HIG keyboard cached");
   } catch {
     steps.push("HIG keyboard fetch skipped or failed");
+  }
+
+  // Build Apple docs MiniSearch index (best-effort)
+  try {
+    const built = await buildAppleDocsIndex();
+    if (built) {
+      const loc = await saveAppleDocsIndex(built.index);
+      steps.push(`Apple docs indexed (${built.count} docs) -> ${loc}`);
+    } else {
+      steps.push("Apple docs index skipped (no docs)");
+    }
+  } catch (e) {
+    steps.push("Apple docs index failed");
   }
 
   return steps.join("; ");

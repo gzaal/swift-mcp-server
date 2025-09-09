@@ -95,10 +95,10 @@ mcp.registerTool(
   "apple_docs_search",
   {
     description: "Search Apple docs (DocC/docsets). Filters by frameworks optionally.",
-    inputSchema: { query: z.string(), frameworks: z.array(z.string()).optional(), limit: z.number().optional() },
+    inputSchema: { query: z.string(), frameworks: z.array(z.string()).optional(), kinds: z.array(z.string()).optional(), topics: z.array(z.string()).optional(), limit: z.number().optional() },
   },
-  async ({ query, frameworks, limit }) => {
-    const results = await appleDocsSearch({ query, frameworks, limit });
+  async ({ query, frameworks, kinds, topics, limit }) => {
+    const results = await appleDocsSearch({ query, frameworks, kinds, topics, limit });
     return { content: [{ type: "text", text: JSON.stringify(results, null, 2) }] };
   }
 );

@@ -4,7 +4,7 @@ import { searchInFiles, readYamlFile } from "../utils/index.js";
 import fg from "fast-glob";
 import { readFile } from "node:fs/promises";
 
-export type AppleDocsSearchInput = { query: string; frameworks?: string[]; limit?: number };
+export type AppleDocsSearchInput = { query: string; frameworks?: string[]; kinds?: string[]; topics?: string[]; limit?: number };
 
 export type AppleDocHit = {
   symbol: string;
@@ -168,7 +168,52 @@ function scoreHit(hit: AppleDocHit, q: string, frameworks?: string[]): number {
   return score;
 }
 
-export async function appleDocsSearch({ query, frameworks, limit = 5 }: AppleDocsSearchInput): Promise<AppleDocHit[]> {
+export async function parseAppleDocAtPath(p: string, excerpt?: string): Promise<AppleDocHit | null> {
+  try {
+    let framework = deriveFrameworkFromPath(p);
+    let symbol = deriveSymbolFromPath(p);
+    let kind: string | undefined;
+    let id: string | undefined;
+    let summary: string | undefined = excerpt;
+    let snippet: string | undefined;
+    let url: string | undefined;
+    if (p.endsWith(".json")) {
+      const txt = await readFile(p, "utf8");
+      const js: any = JSON.parse(txt);
+      const jTitle = js.title || js.metadata?.title || js.identifier?.title;
+      const jSummary = extractSummary(js);
+      const jSnippet = extractDeclarationSnippet(js);
+      const jURL = doccURLToWeb(js.identifier?.url) || urlFromReferences(js, jTitle) || js.url || js.referenceURL;
+      const jFramework = inferFrameworkFromJSON(js) || framework;
+      const jKind = extractKind(js);
+      const jTopics = extractTopics(js);
+      const jId = js.identifier?.url || js.identifier?.identifier || undefined;
+      if (jTitle) symbol = String(jTitle);
+      if (jSummary) summary = jSummary;
+      if (jSnippet) snippet = jSnippet;
+      if (jURL) url = jURL;
+      framework = jFramework;
+      kind = jKind;
+      id = jId;
+      const hit: AppleDocHit = { symbol, framework, kind, id, summary, snippet, url, path: p, takeaways: [] };
+      const topics = jTopics;
+      if (topics && topics.length) hit.topics = topics;
+      return hit;
+    } else if (p.endsWith(".md") || p.endsWith(".markdown") || p.endsWith(".html")) {
+      if (p.endsWith(".md") || p.endsWith(".markdown")) {
+        const txt = await readFile(p, "utf8");
+        const codeMatch = txt.match(/```[\s\S]*?```/);
+        if (codeMatch) snippet = codeMatch[0].replace(/```[a-zA-Z]*\n?|```/g, "").trim();
+      }
+      return { symbol, framework, summary, snippet, path: p, takeaways: [] };
+    }
+    return { symbol, framework, summary, snippet, url, id, kind, path: p, takeaways: [] };
+  } catch {
+    return null;
+  }
+}
+
+export async function appleDocsSearch({ query, frameworks, kinds, topics, limit = 5 }: AppleDocsSearchInput): Promise<AppleDocHit[]> {
   const bases = [join(CACHE_DIR, "apple-docs"), resolve(process.cwd(), ".cache", "apple-docs")];
   const base = (await pathExists(bases[0])) ? bases[0] : bases[1];
   let patterns = ["**/*.json", "**/*.md", "**/*.markdown", "**/*.html"]; // DocC JSON, markdown, HTML
@@ -179,6 +224,37 @@ export async function appleDocsSearch({ query, frameworks, limit = 5 }: AppleDoc
       `${fw}/**/*.markdown`,
       `${fw}/**/*.html`,
     ]);
+  }
+  // Try MiniSearch index first
+  try {
+    const { loadAppleDocsIndex, buildAppleDocsIndex } = await import("../utils/apple_index.js");
+    let mini = await loadAppleDocsIndex();
+    if (!mini) {
+      const built = await buildAppleDocsIndex();
+      mini = built?.index ?? null;
+    }
+    if (mini) {
+      const results = mini.search(query, { prefix: true, fuzzy: 0.1 }) as any[];
+      let hits: AppleDocHit[] = results.map((r: any) => ({
+        symbol: r.symbol,
+        framework: r.framework,
+        kind: r.kind,
+        id: r.id,
+        summary: r.summary,
+        snippet: r.snippet,
+        url: r.url,
+        topics: r.topics,
+        path: r.path,
+        takeaways: [],
+      }));
+      // Apply filters
+      if (frameworks?.length) hits = hits.filter((h) => h.framework && frameworks.includes(h.framework));
+      if (kinds?.length) hits = hits.filter((h) => h.kind && kinds.includes(h.kind));
+      if (topics?.length) hits = hits.filter((h) => (h.topics || []).some((t) => topics.includes(t)));
+      if (hits.length > 0) return hits.slice(0, limit);
+    }
+  } catch {
+    // ignore, fall back to file scan
   }
   const matches = await searchInFiles(base, patterns, query, limit * 3);
   const out: AppleDocHit[] = [];
