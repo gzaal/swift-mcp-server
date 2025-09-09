@@ -7,3 +7,12 @@ NSView.performKeyEquivalent:
 NSEvent.addLocalMonitorForEvents:
   - addLocalMonitorForEvents:
   - +[NSEvent addLocalMonitorForEventsMatchingMask:handler:]
+NSEvent.addGlobalMonitorForEvents:
+  - addGlobalMonitorForEvents:
+  - +[NSEvent addGlobalMonitorForEventsMatchingMask:handler:]
+NSWindow.addChildWindow:
+  - addChildWindow:ordered:
+NSWindow.removeChildWindow:
+  - removeChildWindow:
+NSWindow.beginSheet:
+  - beginSheet:completionHandler:

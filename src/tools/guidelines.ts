@@ -69,6 +69,59 @@ export async function guidelinesCheck({ code }: GuidelinesCheckInput) {
     });
   }
 
+  // AppKit/SwiftUI bridge heuristics (best-effort)
+  // 1) NSEvent monitors usage
+  const localMon = code.match(/NSEvent\s*\.\s*addLocalMonitorForEvents/i);
+  const globalMon = code.match(/NSEvent\s*\.\s*addGlobalMonitorForEvents/i);
+  if (localMon) {
+    issues.push({
+      rule: "NSEventMonitorUsage",
+      message: "Local event monitor present; ensure you bail when keyWindow != mainWindow and avoid leaking events.",
+    });
+  }
+  if (globalMon) {
+    issues.push({
+      rule: "NSEventGlobalMonitor",
+      message: "Global event monitor detected; prefer first-responder handling or local monitors with strict guards.",
+    });
+  }
+
+  // 2) NSViewRepresentable without acceptsFirstResponder
+  const hasRepresentable = /NSViewRepresentable/.test(code);
+  const hasAcceptsFR = /acceptsFirstResponder/.test(code);
+  if (hasRepresentable && !hasAcceptsFR) {
+    issues.push({
+      rule: "FirstResponderMissing",
+      message: "NSViewRepresentable shim lacks acceptsFirstResponder override; key events may not be routed correctly.",
+    });
+  }
+
+  // 3) performKeyEquivalent only
+  const hasPerformKeyEq = /performKeyEquivalent\s*\(/.test(code) || /performKeyEquivalent:\s*\(/.test(code);
+  const hasKeyDown = /keyDown\s*\(/.test(code);
+  if (hasPerformKeyEq && !hasKeyDown) {
+    issues.push({
+      rule: "PerformKeyEquivalentOnly",
+      message: "Override keyDown alongside performKeyEquivalent to participate in the responder chain.",
+    });
+  }
+
+  // 4) Window identifier and child relationship
+  const createsWindow = /NSWindow\s*\(/.test(code) || /NSPanel\s*\(/.test(code);
+  const setsIdentifier = /\.(identifier)\s*=/.test(code);
+  if (createsWindow && !setsIdentifier) {
+    issues.push({
+      rule: "WindowIdentifierMissing",
+      message: "Consider assigning a window identifier for diagnostics and focus management.",
+    });
+  }
+  const usesChildAttach = /addChildWindow\s*\(/.test(code);
+  if (createsWindow && !usesChildAttach) {
+    issues.push({
+      rule: "ChildWindowRelationship",
+      message: "Attach transient windows as children of their owners to constrain focus and ordering.",
+    });
+  }
+
   return { issues };
 }
-

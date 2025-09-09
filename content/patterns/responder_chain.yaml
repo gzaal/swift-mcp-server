@@ -1,0 +1,14 @@
+id: appkit-responder-chain-basics
+title: Use NSResponder chain and initialFirstResponder
+tags: [focus, AppKit, NSResponder]
+summary: Set initialFirstResponder and rely on the responder chain for key handling; avoid global monitors.
+snippet: |
+  window.initialFirstResponder = myView
+  class MyView: NSView {
+    override var acceptsFirstResponder: Bool { true }
+    override func keyDown(with event: NSEvent) { /* ... */ }
+  }
+takeaways:
+  - The first responder receives key events first
+  - Override acceptsFirstResponder on custom views
+

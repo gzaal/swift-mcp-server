@@ -29,6 +29,26 @@ function deriveSymbolFromPath(p: string): string {
   return name;
 }
 
+function normalizeSymbol(s: string): string {
+  return s
+    .replace(/\(.*?\)/g, "") // drop parameter lists
+    .replace(/:/g, "")
+    .replace(/\s+/g, "")
+    .toLowerCase();
+}
+
+function scoreHit(hit: AppleDocHit, q: string, frameworks?: string[]): number {
+  let score = 0;
+  const nq = normalizeSymbol(q);
+  const ns = normalizeSymbol(hit.symbol || "");
+  if (ns === nq) score += 50; // exact symbol match
+  if ((hit.symbol || "").toLowerCase().includes(q.toLowerCase())) score += 10;
+  if (hit.summary && hit.summary.toLowerCase().includes(q.toLowerCase())) score += 5;
+  if (hit.snippet) score += 2;
+  if (frameworks && frameworks.length && hit.framework && frameworks.includes(hit.framework)) score += 8;
+  return score;
+}
+
 export async function appleDocsSearch({ query, frameworks, limit = 5 }: AppleDocsSearchInput): Promise<AppleDocHit[]> {
   const bases = [join(CACHE_DIR, "apple-docs"), resolve(process.cwd(), ".cache", "apple-docs")];
   const base = (await pathExists(bases[0])) ? bases[0] : bases[1];
@@ -63,10 +83,20 @@ export async function appleDocsSearch({ query, frameworks, limit = 5 }: AppleDoc
         if (codeMatch) snippet = codeMatch[0].replace(/```[a-zA-Z]*\n?|```/g, "").trim();
       }
       out.push({ symbol, framework, summary, snippet, url, path: m.path, takeaways: [] });
-      if (out.length >= (limit || 5)) break;
     } catch {
       // ignore parse errors
     }
+  }
+  // Rank hits
+  out.sort((a, b) => scoreHit(b, query, frameworks) - scoreHit(a, query, frameworks));
+  // If frameworks filter provided, prefer those first
+  if (frameworks && frameworks.length) {
+    out.sort((a, b) => {
+      const aIn = a.framework && frameworks.includes(a.framework) ? 0 : 1;
+      const bIn = b.framework && frameworks.includes(b.framework) ? 0 : 1;
+      if (aIn !== bIn) return aIn - bIn;
+      return 0;
+    });
   }
   return out.slice(0, limit);
 }

@@ -1,0 +1,12 @@
+id: appkit-menu-shortcuts
+title: Define keyboard shortcuts via NSMenuItem keyEquivalent
+tags: [keyboard, shortcuts, AppKit, menus]
+summary: Prefer NSMenuItem keyEquivalent and keyEquivalentModifierMask for app-wide shortcuts; avoid manual NSEvent keyCode checks.
+snippet: |
+  let item = NSMenuItem(title: "Save", action: #selector(saveDocument(_:)), keyEquivalent: "s")
+  item.keyEquivalentModifierMask = [.command]
+  menu.addItem(item)
+takeaways:
+  - Use menu item key equivalents for consistent shortcuts
+  - Avoid relying on raw keyCode comparisons for commands
+

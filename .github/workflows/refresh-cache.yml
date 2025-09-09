@@ -1,0 +1,40 @@
+name: Refresh Cache
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays at 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache HIG and Apple docs dir
+        uses: actions/cache@v4
+        with:
+          path: |
+            .cache/hig
+            .cache/apple-docs
+          key: docs-cache-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            docs-cache-${{ runner.os }}-
+
+      - name: Build
+        run: npm run build
+
+      - name: Update cache (swift_update_sync)
+        run: |
+          node -e "import('./dist/tools/update.js').then(m=>m.updateSync()).then(msg=>{console.log(msg)},err=>{console.error(err);process.exit(1)})"
+

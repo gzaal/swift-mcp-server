@@ -1,0 +1,15 @@
+id: appkit-child-window-attach
+title: Attach transient window as child of parent
+tags: [window, AppKit, child-window, focus]
+summary: Always attach popovers/panels as child windows to the owner to constrain focus and z-order.
+snippet: |
+  if let parent = NSApp.keyWindow {
+    parent.addChildWindow(child, ordered: .above)
+  }
+  // On dismiss
+  child.orderOut(nil)
+  parent?.removeChildWindow(child)
+takeaways:
+  - Child windows track the parent's focus and ordering
+  - Always remove the child on close to avoid leaks
+

@@ -1,0 +1,13 @@
+id: appkit-modal-sheet
+title: Present sheets with beginSheet and completion
+tags: [window, modal, sheet, AppKit]
+summary: Use beginSheet on the parent window and handle cancellation with ESC; avoid detached sheet windows.
+snippet: |
+  parent.beginSheet(sheet) { resp in
+    parent.endSheet(sheet)
+    sheet.orderOut(nil)
+  }
+takeaways:
+  - Use beginSheet/endSheet for modal sheets
+  - Close and orderOut on completion to clean up
+
