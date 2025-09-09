@@ -6,6 +6,7 @@ import { runCommand } from "../utils/exec.js";
 import { buildAppleDocsIndex, saveAppleDocsIndex } from "../utils/apple_index.js";
 import { buildHigIndex, saveHigIndex } from "../utils/hig_index.js";
 import { buildPatternsIndex, savePatternsIndex } from "../utils/patterns_index.js";
+import { buildUnifiedIndex, saveUnifiedIndex } from "../utils/hybrid_index.js";
 
 async function gitCloneOrPull(repo: string, destSubdir: string) {
   const base = await ensureCacheDir();
@@ -114,6 +115,19 @@ export async function updateSync(): Promise<string> {
     }
   } catch {
     steps.push("Patterns index failed");
+  }
+
+  // Build Unified hybrid index
+  try {
+    const built = await buildUnifiedIndex();
+    if (built) {
+      const loc = await saveUnifiedIndex(built.index);
+      steps.push(`Hybrid index built (${built.count}) -> ${loc}`);
+    } else {
+      steps.push("Hybrid index skipped (no sources)");
+    }
+  } catch {
+    steps.push("Hybrid index failed");
   }
 
   return steps.join("; ");

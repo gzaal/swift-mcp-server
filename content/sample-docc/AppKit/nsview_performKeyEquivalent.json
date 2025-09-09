@@ -1,0 +1,23 @@
+{
+  "title": "performKeyEquivalent(_:)",
+  "abstract": [{"text": "Asks the view to perform the action associated with a key equivalent."}],
+  "identifier": {"url": "doc://com.apple.documentation/documentation/appkit/nsview/1526900-performkeyequivalent"},
+  "metadata": {"module": {"name": "AppKit"}},
+  "symbolKind": "method",
+  "declarationFragments": [
+    {"spelling": "override ", "kind": "keyword"},
+    {"spelling": "func ", "kind": "keyword"},
+    {"spelling": "performKeyEquivalent", "kind": "identifier"},
+    {"spelling": "(", "kind": "punctuation"},
+    {"spelling": "_ event: NSEvent", "kind": "identifier"},
+    {"spelling": ") -> Bool", "kind": "identifier"}
+  ],
+  "references": {
+    "doc://com.apple.documentation/documentation/appkit/nsview/1526900-performkeyequivalent": {
+      "title": "performKeyEquivalent(_:)",
+      "url": "documentation/appkit/nsview/1526900-performkeyequivalent"
+    }
+  },
+  "topicSections": [{"title": "Handling key equivalents"}]
+}
+

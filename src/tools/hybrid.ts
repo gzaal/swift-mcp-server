@@ -1,7 +1,5 @@
 import { z } from "zod";
-import { loadAppleDocsIndex, buildAppleDocsIndex } from "../utils/apple_index.js";
-import { loadHigIndex, buildHigIndex } from "../utils/hig_index.js";
-import { loadPatternsIndex, buildPatternsIndex } from "../utils/patterns_index.js";
+import { loadUnifiedIndex, buildUnifiedIndex } from "../utils/hybrid_index.js";
 
 export const HybridSearchSchema = z.object({
   query: z.string(),
@@ -19,45 +17,21 @@ export async function hybridSearch({ query, sources, frameworks, kinds, topics, 
   const use = new Set(sources && sources.length ? sources : ["apple", "hig", "pattern"]);
   const results: any[] = [];
 
-  // Apple docs
-  if (use.has("apple")) {
-    try {
-      let mini = await loadAppleDocsIndex();
-      if (!mini) mini = (await buildAppleDocsIndex())?.index ?? null;
-      if (mini) {
-        let hits = (mini.search(query, { prefix: true, fuzzy: 0.1 }) as any[]).map((r) => ({ ...r, source: "apple" }));
-        if (frameworks?.length) hits = hits.filter((h) => h.framework && frameworks.includes(h.framework));
-        if (kinds?.length) hits = hits.filter((h) => h.kind && kinds.includes(h.kind));
-        if (topics?.length) hits = hits.filter((h) => (h.topics || []).some((t: string) => topics.includes(t)));
-        results.push(...hits.slice(0, limit));
-      }
-    } catch {}
-  }
-
-  // HIG
-  if (use.has("hig")) {
-    try {
-      let mini = await loadHigIndex();
-      if (!mini) mini = (await buildHigIndex())?.index ?? null;
-      if (mini) {
-        const hits = (mini.search(query, { prefix: true, fuzzy: 0.1 }) as any[]).map((r) => ({ ...r, source: "hig" }));
-        results.push(...hits.slice(0, limit));
-      }
-    } catch {}
-  }
-
-  // Patterns
-  if (use.has("pattern")) {
-    try {
-      let mini = await loadPatternsIndex();
-      if (!mini) mini = (await buildPatternsIndex())?.index ?? null;
-      if (mini) {
-        let hits = (mini.search(query, { prefix: true, fuzzy: 0.1 }) as any[]).map((r) => ({ ...r, source: "pattern" }));
-        if (tags?.length) hits = hits.filter((h) => (h.tags || []).some((t: string) => tags.includes(t)));
-        results.push(...hits.slice(0, limit));
-      }
-    } catch {}
-  }
+  // Unified index (preferred)
+  try {
+    let mini = await loadUnifiedIndex();
+    if (!mini) mini = (await buildUnifiedIndex())?.index ?? null;
+    if (mini) {
+      let hits = (mini.search(query, { prefix: true, fuzzy: 0.1 }) as any[]);
+      // Apply filters across unified docs
+      if (sources?.length) hits = hits.filter((h) => sources.includes(h.source));
+      if (frameworks?.length) hits = hits.filter((h) => h.framework && frameworks.includes(h.framework));
+      if (kinds?.length) hits = hits.filter((h) => h.kind && kinds.includes(h.kind));
+      if (topics?.length) hits = hits.filter((h) => (h.topics || []).some((t: string) => topics.includes(t)));
+      if (tags?.length) hits = hits.filter((h) => (h.tags || []).some((t: string) => tags.includes(t)));
+      results.push(...hits.slice(0, limit));
+    }
+  } catch {}
 
   // Simple cross-source ranking: prefer exact title/symbol match, then by stored score if present
   const nq = query.toLowerCase();
@@ -71,14 +45,23 @@ export async function hybridSearch({ query, sources, frameworks, kinds, topics, 
   });
 
   const limited = results.slice(0, limit);
-  // Facets
-  const facet = <T>(vals: (T | undefined | null)[]) => Array.from(new Set(vals.filter(Boolean) as T[]));
+  // Facets with counts and sorted
+  const countMap = (vals: (string | undefined)[]) => {
+    const m = new Map<string, number>();
+    for (const v of vals) if (v) m.set(v, (m.get(v) || 0) + 1);
+    return Array.from(m.entries()).map(([value, count]) => ({ value, count })).sort((a, b) => a.value.localeCompare(b.value));
+  };
+  const countMulti = (lists: (string[] | undefined)[]) => {
+    const m = new Map<string, number>();
+    for (const arr of lists) for (const v of arr || []) m.set(v, (m.get(v) || 0) + 1);
+    return Array.from(m.entries()).map(([value, count]) => ({ value, count })).sort((a, b) => a.value.localeCompare(b.value));
+  };
   const facets = {
-    sources: facet(limited.map((r) => r.source)),
-    frameworks: facet(limited.map((r) => r.framework)),
-    kinds: facet(limited.map((r) => r.kind)),
-    topics: facet(limited.flatMap((r) => (r.topics ?? []) as string[])),
-    tags: facet(limited.flatMap((r) => (r.tags ?? []) as string[])),
+    sources: countMap(limited.map((r) => r.source)),
+    frameworks: countMap(limited.map((r) => r.framework)),
+    kinds: countMap(limited.map((r) => r.kind)),
+    topics: countMulti(limited.map((r) => r.topics)),
+    tags: countMulti(limited.map((r) => r.tags)),
   };
   return { results: limited, facets };
 }
