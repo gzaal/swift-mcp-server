@@ -26,6 +26,7 @@ Tools
 - Additional patterns include responder chain basics, child windows, sheets, and menu shortcut conventions.
 - `hig_search`: search local HIG snapshots.
 - `swift_symbol_lookup`: resolve a symbol/selector to Apple doc hits.
+- `search_hybrid`: unified search across Apple DocC, HIG, and patterns.
 
 Docker
 
@@ -60,3 +61,4 @@ Cache & Offline
   - Curated patterns live in `content/patterns/*.yaml` and symbol aliases in `content/symbols/aliases.yaml`.
   - A scheduled workflow refreshes HIG weekly; use `workflow_dispatch` to run it on-demand.
   - The first successful `swift_update_sync` will build a MiniSearch index for Apple docs into `.cache/index/apple-docs.json`.
+  - The sync also builds HIG (`.cache/index/hig.json`) and patterns (`.cache/index/patterns.json`) indexes for the hybrid search tool.

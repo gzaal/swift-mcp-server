@@ -2,6 +2,8 @@ import { join } from "node:path";
 import { ensureCacheDir, pathExists } from "../utils/cache.js";
 import { runCommand } from "../utils/exec.js";
 import { buildAppleDocsIndex, saveAppleDocsIndex } from "../utils/apple_index.js";
+import { buildHigIndex, saveHigIndex } from "../utils/hig_index.js";
+import { buildPatternsIndex, savePatternsIndex } from "../utils/patterns_index.js";
 
 async function gitCloneOrPull(repo: string, destSubdir: string) {
   const base = await ensureCacheDir();
@@ -72,6 +74,32 @@ export async function updateSync(): Promise<string> {
     }
   } catch (e) {
     steps.push("Apple docs index failed");
+  }
+
+  // Build HIG index
+  try {
+    const built = await buildHigIndex();
+    if (built) {
+      const loc = await saveHigIndex(built.index);
+      steps.push(`HIG indexed (${built.count} docs) -> ${loc}`);
+    } else {
+      steps.push("HIG index skipped (no docs)");
+    }
+  } catch {
+    steps.push("HIG index failed");
+  }
+
+  // Build Patterns index
+  try {
+    const built = await buildPatternsIndex();
+    if (built) {
+      const loc = await savePatternsIndex(built.index);
+      steps.push(`Patterns indexed (${built.count}) -> ${loc}`);
+    } else {
+      steps.push("Patterns index skipped (no content)");
+    }
+  } catch {
+    steps.push("Patterns index failed");
   }
 
   return steps.join("; ");

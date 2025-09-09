@@ -11,6 +11,7 @@ import { updateSync } from "./tools/update.js";
 import { appleDocsSearch, swiftSymbolLookup } from "./tools/apple_docs.js";
 import { cocoaPatternsSearch } from "./tools/patterns.js";
 import { higSearch } from "./tools/hig.js";
+import { hybridSearch } from "./tools/hybrid.js";
 
 const mcp = new McpServer({ name: "swift-mcp-server", version: "0.1.0" });
 
@@ -138,6 +139,27 @@ mcp.registerTool(
   },
   async ({ symbolOrSelector }) => {
     const results = await swiftSymbolLookup(symbolOrSelector);
+    return { content: [{ type: "text", text: JSON.stringify(results, null, 2) }] };
+  }
+);
+
+// Hybrid search across Apple docs, HIG, and patterns
+mcp.registerTool(
+  "search_hybrid",
+  {
+    description: "Hybrid search across Apple DocC, HIG, and curated patterns with facet filters.",
+    inputSchema: {
+      query: z.string(),
+      sources: z.array(z.enum(["apple", "hig", "pattern"]).default("apple")).optional(),
+      frameworks: z.array(z.string()).optional(),
+      kinds: z.array(z.string()).optional(),
+      topics: z.array(z.string()).optional(),
+      tags: z.array(z.string()).optional(),
+      limit: z.number().optional(),
+    },
+  },
+  async (input) => {
+    const results = await hybridSearch(input as any);
     return { content: [{ type: "text", text: JSON.stringify(results, null, 2) }] };
   }
 );
