@@ -29,6 +29,82 @@ function deriveSymbolFromPath(p: string): string {
   return name;
 }
 
+function doccURLToWeb(u?: string): string | undefined {
+  if (!u) return undefined;
+  if (u.startsWith("https://")) return u;
+  // doc://com.apple.documentation/documentation/appkit/nswindow
+  const m = u.match(/doc:\/\/com\.apple\.documentation\/documentation\/(.*)$/i);
+  if (m) {
+    return `https://developer.apple.com/documentation/${m[1]}`;
+  }
+  // Some docsets store referenceURL directly
+  return undefined;
+}
+
+function flattenInline(nodes: any): string {
+  if (!nodes) return "";
+  const arr = Array.isArray(nodes) ? nodes : [nodes];
+  const parts: string[] = [];
+  for (const n of arr) {
+    if (!n) continue;
+    if (typeof n === "string") { parts.push(n); continue; }
+    const t = (n.type || n.kind || "").toString();
+    if (n.text) parts.push(String(n.text));
+    if (n.spelling) parts.push(String(n.spelling));
+    if (n.code) parts.push(String(n.code));
+    if (n.children) parts.push(flattenInline(n.children));
+    // ignore other node kinds
+  }
+  return parts.join(" ").replace(/\s+/g, " ").trim();
+}
+
+function extractDeclarationSnippet(js: any): string | undefined {
+  // 1) declarationFragments (DocC symbol pages often include this)
+  const declFrags = js?.declarationFragments;
+  if (Array.isArray(declFrags) && declFrags.length) {
+    const snippet = declFrags.map((f: any) => f.spelling ?? f.text ?? "").join("");
+    if (snippet.trim()) return snippet.trim();
+  }
+  // 2) primaryContentSections with declarations
+  const pcs = js?.primaryContentSections;
+  if (Array.isArray(pcs)) {
+    for (const sec of pcs) {
+      if ((sec.kind === "declarations" || sec.type === "declarations") && Array.isArray(sec.declarations) && sec.declarations[0]?.tokens) {
+        const tokens = sec.declarations[0].tokens as any[];
+        const snippet = tokens.map((t: any) => t.spelling ?? t.text ?? "").join("");
+        if (snippet.trim()) return snippet.trim();
+      }
+      // Some variants: codeListing
+      if ((sec.kind === "codeListing" || sec.type === "codeListing") && sec.code) {
+        return String(sec.code).trim();
+      }
+    }
+  }
+  // 3) variants content
+  const variants = js?.variants;
+  if (Array.isArray(variants)) {
+    for (const v of variants) {
+      const snippet = extractDeclarationSnippet(v);
+      if (snippet) return snippet;
+    }
+  }
+  return undefined;
+}
+
+function extractSummary(js: any): string | undefined {
+  const abs = js?.abstract;
+  const s = flattenInline(abs);
+  if (s) return s;
+  const desc = js?.description || js?.overview;
+  const d = flattenInline(desc);
+  if (d) return d;
+  return undefined;
+}
+
+function inferFrameworkFromJSON(js: any): string | undefined {
+  return js?.metadata?.module?.name || js?.module?.name || undefined;
+}
+
 function normalizeSymbol(s: string): string {
   return s
     .replace(/\(.*?\)/g, "") // drop parameter lists
@@ -63,25 +139,35 @@ export async function appleDocsSearch({ query, frameworks, limit = 5 }: AppleDoc
   }
   const matches = await searchInFiles(base, patterns, query, limit * 3);
   const out: AppleDocHit[] = [];
+  const dedupe = new Set<string>();
   for (const m of matches) {
     try {
-      const framework = deriveFrameworkFromPath(m.path);
+      let framework = deriveFrameworkFromPath(m.path);
       let symbol = deriveSymbolFromPath(m.path);
       let summary: string | undefined = m.excerpt;
       let snippet: string | undefined;
       let url: string | undefined;
       if (m.path.endsWith(".json")) {
         const txt = await readFile(m.path, "utf8");
-        const js = JSON.parse(txt);
-        symbol = js.identifier?.title || js.symbol?.title || symbol;
-        summary = js.abstract?.map?.((n: any) => (typeof n === "string" ? n : n.text)).join(" ") || summary;
-        url = js.url || js.referenceURL || url;
+        const js: any = JSON.parse(txt);
+        const jTitle = js.title || js.metadata?.title || js.identifier?.title;
+        const jSummary = extractSummary(js);
+        const jSnippet = extractDeclarationSnippet(js);
+        const jURL = doccURLToWeb(js.identifier?.url) || js.url || js.referenceURL;
+        const jFramework = inferFrameworkFromJSON(js) || framework;
+        if (jTitle) symbol = String(jTitle);
+        if (jSummary) summary = jSummary;
+        if (jSnippet) snippet = jSnippet;
+        if (jURL) url = jURL;
+        framework = jFramework;
       } else if (m.path.endsWith(".md") || m.path.endsWith(".markdown")) {
-        // try first code block as snippet
         const txt = await readFile(m.path, "utf8");
         const codeMatch = txt.match(/```[\s\S]*?```/);
         if (codeMatch) snippet = codeMatch[0].replace(/```[a-zA-Z]*\n?|```/g, "").trim();
       }
+      const key = `${(framework || "").toLowerCase()}|${(symbol || "").toLowerCase()}`;
+      if (dedupe.has(key)) continue;
+      dedupe.add(key);
       out.push({ symbol, framework, summary, snippet, url, path: m.path, takeaways: [] });
     } catch {
       // ignore parse errors
