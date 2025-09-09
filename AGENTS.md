@@ -73,3 +73,44 @@ Example (fresh dev): npm install && npm run dev
 - Sync Pipeline (swift_update_sync)
   - Mirrors swift-book and swift-evolution; caches API Guidelines; seeds sample DocC
   - Builds/saves indexes for Apple, HIG, patterns, and hybrid in one run
+
+### Architecture Diagram (ASCII)
+
+```
+            +--------------------+        +------------------+
+            |  Swift Book (TSPL) |        | Swift Evolution  |
+            +--------------------+        +------------------+
+                      |                            |
+                      v                            v
+                 (mirror into)                (mirror into)
+                    .cache                        .cache
+                        \                             /
+                         v                           v
+  +----------------+   +------------------------+   +----------------+
+  | API Guidelines |   | Apple DocC / Dashsets |   | HIG Snapshots  |
+  +----------------+   +------------------------+   +----------------+
+           |                      |                          |
+           v                      v                          v
+      (cached HTML)     .cache/apple-docs/<Framework>    .cache/hig
+                                 |                          |
+                                 v                          v
+                      +-------------------+       +-------------------+
+                      |  Index Builders   |       |  Index Builders   |
+                      |  (MiniSearch)     |       |  (MiniSearch)     |
+                      +-------------------+       +-------------------+
+                             |   |   |                    |
+                             |   |   |                    |
+                             v   v   v                    v
+                   .cache/index/apple-docs.json   .cache/index/hig.json
+                   .cache/index/patterns.json     .cache/index/hybrid.json
+
+                               +-------------------------------+
+                               |           MCP Server          |
+                               |  src/server.ts registers:     |
+                               |  - docs/evolution tools       |
+                               |  - lint/format/guidelines     |
+                               |  - apple_docs/symbol_lookup   |
+                               |  - patterns/hig               |
+                               |  - search_hybrid (facets)     |
+                               +-------------------------------+
+```
