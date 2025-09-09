@@ -70,7 +70,15 @@ export async function hybridSearch({ query, sources, frameworks, kinds, topics, 
     return bs - as;
   });
 
-  // Global limit
-  return results.slice(0, limit);
+  const limited = results.slice(0, limit);
+  // Facets
+  const facet = <T>(vals: (T | undefined | null)[]) => Array.from(new Set(vals.filter(Boolean) as T[]));
+  const facets = {
+    sources: facet(limited.map((r) => r.source)),
+    frameworks: facet(limited.map((r) => r.framework)),
+    kinds: facet(limited.map((r) => r.kind)),
+    topics: facet(limited.flatMap((r) => (r.topics ?? []) as string[])),
+    tags: facet(limited.flatMap((r) => (r.tags ?? []) as string[])),
+  };
+  return { results: limited, facets };
 }
-

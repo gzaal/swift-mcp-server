@@ -1,0 +1,19 @@
+{
+  "title": "NSWindow",
+  "abstract": [{"text": "A window that an app displays on the screen."}],
+  "identifier": {"url": "doc://com.apple.documentation/documentation/appkit/nswindow"},
+  "metadata": {"module": {"name": "AppKit"}},
+  "symbolKind": "class",
+  "declarationFragments": [
+    {"spelling": "class ", "kind": "keyword"},
+    {"spelling": "NSWindow", "kind": "identifier"}
+  ],
+  "references": {
+    "doc://com.apple.documentation/documentation/appkit/nswindow": {
+      "title": "NSWindow",
+      "url": "documentation/appkit/nswindow"
+    }
+  },
+  "topicSections": [{"title": "Overview"}]
+}
+

@@ -1,5 +1,7 @@
 import { join } from "node:path";
 import { ensureCacheDir, pathExists } from "../utils/cache.js";
+import { cp, stat } from "node:fs/promises";
+import { resolve } from "node:path";
 import { runCommand } from "../utils/exec.js";
 import { buildAppleDocsIndex, saveAppleDocsIndex } from "../utils/apple_index.js";
 import { buildHigIndex, saveHigIndex } from "../utils/hig_index.js";
@@ -45,6 +47,18 @@ export async function updateSync(): Promise<string> {
   const higDir = await ensureCacheDir("hig");
   steps.push(`apple-docs dir ready at ${appleDocsDir}`);
   steps.push(`HIG dir ready at ${higDir}`);
+
+  // Seed sample DocC (for CI/local dev)
+  try {
+    const sample = resolve(process.cwd(), "content", "sample-docc");
+    const st = await stat(sample).catch(() => null);
+    if (st && st.isDirectory()) {
+      await cp(sample, appleDocsDir, { recursive: true });
+      steps.push("Seeded sample DocC into apple-docs");
+    }
+  } catch {
+    steps.push("Seeding sample DocC skipped or failed");
+  }
 
   // Try to fetch a small subset of HIG pages (best-effort)
   try {

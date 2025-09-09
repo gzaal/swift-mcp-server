@@ -62,3 +62,4 @@ Cache & Offline
   - A scheduled workflow refreshes HIG weekly; use `workflow_dispatch` to run it on-demand.
   - The first successful `swift_update_sync` will build a MiniSearch index for Apple docs into `.cache/index/apple-docs.json`.
   - The sync also builds HIG (`.cache/index/hig.json`) and patterns (`.cache/index/patterns.json`) indexes for the hybrid search tool.
+  - A small sample DocC page is bundled under `content/sample-docc/` and is copied into `.cache/apple-docs/` by `swift_update_sync` to enable CI smoke tests and local try-outs.

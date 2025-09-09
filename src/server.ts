@@ -159,8 +159,8 @@ mcp.registerTool(
     },
   },
   async (input) => {
-    const results = await hybridSearch(input as any);
-    return { content: [{ type: "text", text: JSON.stringify(results, null, 2) }] };
+    const payload = await hybridSearch(input as any);
+    return { content: [{ type: "text", text: JSON.stringify(payload, null, 2) }] };
   }
 );
 
