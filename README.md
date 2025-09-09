@@ -173,3 +173,4 @@ Examples
   - `node -e "import('./dist/tools/hybrid.js').then(m=>m.hybridSearch({query:'NSWindow', sources:['apple'], frameworks:['AppKit'], limit:5})).then(r=>console.log(JSON.stringify(r,null,2)))"`
 - Hybrid Apple method search with kind filter:
   - `node -e "import('./dist/tools/hybrid.js').then(m=>m.hybridSearch({query:'performKeyEquivalent', sources:['apple'], frameworks:['AppKit'], kinds:['method'], limit:5})).then(r=>console.log(JSON.stringify(r,null,2)))"`
+See CONTRIBUTING.md for guidelines on adding content and tools.

@@ -7,6 +7,9 @@
   - src/utils/: Shared helpers (exec, cache).
 - dist/: Build output from TypeScript.
 - .cache/: Local mirror for swift-book, swift-evolution, and guidelines HTML.
+  - .cache/apple-docs: Apple DocC/Dash content used by Apple docs tools
+  - .cache/hig: HIG HTML/MD snapshots
+  - .cache/index: MiniSearch indexes (apple-docs.json, hig.json, patterns.json, hybrid.json)
 - Dockerfile, Dockerfile.full: Base and “tools-included” images.
 
 ## Build, Run, and Development Commands
@@ -43,3 +46,30 @@ Example (fresh dev): npm install && npm run dev
 - .cache is writable and safe to remove; repopulate via swift_update_sync.
 - Optional binaries: swift-format, swiftformat, swiftlint. Server degrades gracefully if missing.
 - Use inspector:no-auth only locally. For MCP clients, run node dist/server.js over stdio.
+
+## Architecture Overview
+
+- Sources
+  - Swift Book + API Design Guidelines (mirrored): used by swift_docs_search
+  - Swift Evolution (mirrored): used by swift_evolution_lookup
+  - Apple DocC/Dash (user-provided or bundled samples): used by apple_docs_search, swift_symbol_lookup, search_hybrid
+  - HIG snapshots (best-effort fetched): used by hig_search and hybrid
+  - Curated patterns (YAML): used by cocoa_patterns_search and hybrid
+
+- Indexes (MiniSearch)
+  - Apple: symbol/title, summary, snippet, framework, kind, topics → .cache/index/apple-docs.json
+  - HIG: title, summary → .cache/index/hig.json
+  - Patterns: title, tags, summary, snippet → .cache/index/patterns.json
+  - Hybrid: unified index across Apple/HIG/Patterns with consistent fields → .cache/index/hybrid.json
+
+- Tools
+  - apple_docs_search: parses DocC JSON deeply (title, abstract, snippet, canonical URL, kind, topics) with ranking/dedupe
+  - swift_symbol_lookup: resolves aliases then reuses apple_docs_search
+  - cocoa_patterns_search: YAML-backed curated notes
+  - hig_search: HTML/MD snapshots with canonical link extraction
+  - search_hybrid: unified search across sources; returns results and facet counts
+  - Existing: swift_docs_search, swift_evolution_lookup, swift_lint_run, swift_format_apply, swift_guidelines_check, swift_update_sync
+
+- Sync Pipeline (swift_update_sync)
+  - Mirrors swift-book and swift-evolution; caches API Guidelines; seeds sample DocC
+  - Builds/saves indexes for Apple, HIG, patterns, and hybrid in one run
