@@ -147,7 +147,7 @@ mcp.registerTool(
 mcp.registerTool(
   "search_hybrid",
   {
-    description: "Hybrid search across Apple DocC, HIG, and curated patterns with facet filters.",
+    description: "Hybrid search across Apple DocC, HIG, and curated patterns with facet filters; returns { results, facets } with facet counts.",
     inputSchema: {
       query: z.string(),
       sources: z.array(z.enum(["apple", "hig", "pattern"]).default("apple")).optional(),

@@ -27,6 +27,7 @@ Tools
 - `hig_search`: search local HIG snapshots.
 - `swift_symbol_lookup`: resolve a symbol/selector to Apple doc hits.
 - `search_hybrid`: unified search across Apple DocC, HIG, and patterns.
+  - Returns `{ results, facets }` where `facets` contains sorted counts for `sources`, `frameworks`, `kinds`, `topics`, and `tags`.
 
 Docker
 
@@ -63,3 +64,10 @@ Cache & Offline
   - The first successful `swift_update_sync` will build a MiniSearch index for Apple docs into `.cache/index/apple-docs.json`.
   - The sync also builds HIG (`.cache/index/hig.json`) and patterns (`.cache/index/patterns.json`) indexes for the hybrid search tool.
   - A small sample DocC page is bundled under `content/sample-docc/` and is copied into `.cache/apple-docs/` by `swift_update_sync` to enable CI smoke tests and local try-outs.
+
+Examples
+
+- Hybrid Apple class search (with facets):
+  - `node -e "import('./dist/tools/hybrid.js').then(m=>m.hybridSearch({query:'NSWindow', sources:['apple'], frameworks:['AppKit'], limit:5})).then(r=>console.log(JSON.stringify(r,null,2)))"`
+- Hybrid Apple method search with kind filter:
+  - `node -e "import('./dist/tools/hybrid.js').then(m=>m.hybridSearch({query:'performKeyEquivalent', sources:['apple'], frameworks:['AppKit'], kinds:['method'], limit:5})).then(r=>console.log(JSON.stringify(r,null,2)))"`

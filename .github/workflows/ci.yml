@@ -53,6 +53,10 @@ jobs:
         run: |
           node -e "import('./dist/tools/hybrid.js').then(m=>m.hybridSearch({query:'NSWindow', sources:['apple'], frameworks:['AppKit'], limit:3})).then(r=>{console.log(JSON.stringify(r,null,2)); if(!r || !Array.isArray(r.results) || r.results.length===0){process.exit(1)}},e=>{console.error(e);process.exit(1)})"
 
+      - name: Smoke test hybrid search (Apple method filter)
+        run: |
+          node -e "import('./dist/tools/hybrid.js').then(m=>m.hybridSearch({query:'performKeyEquivalent', sources:['apple'], frameworks:['AppKit'], kinds:['method'], limit:5})).then(r=>{console.log(JSON.stringify(r,null,2)); const ok = r && Array.isArray(r.results) && r.results.some(x=>x.kind==='method'); if(!ok){process.exit(1)}},e=>{console.error(e);process.exit(1)})"
+
       - name: Smoke test docs search
         run: |
           node -e "import('./dist/tools/docs.js').then(m=>m.docsSearch({query:'String',limit:1})).then(r=>{console.log(r); if(!Array.isArray(r) || r.length===0){process.exit(1)}},e=>{console.error(e);process.exit(1)})"
