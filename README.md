@@ -29,6 +29,63 @@ Tools
 - `search_hybrid`: unified search across Apple DocC, HIG, and patterns.
   - Returns `{ results, facets }` where `facets` contains sorted counts for `sources`, `frameworks`, `kinds`, `topics`, and `tags`.
 
+**Tool Usage**
+
+- `swift_update_sync`:
+  - Input: none
+  - Behavior: mirrors `swift-evolution`, `swift-book`, caches API Design Guidelines + HIG pages, seeds sample DocC, and builds indexes (Apple, HIG, patterns, hybrid).
+  - Example: `node dist/tools/update.js`
+
+- `swift_docs_search`:
+  - Input: `query: string`, `limit?: number`
+  - Sources: TSPL (swift-book) + API Design Guidelines
+  - Example: `node -e "import('./dist/tools/docs.js').then(m=>m.docsSearch({query:'Optionals',limit:3})).then(console.log)"`
+
+- `swift_evolution_lookup`:
+  - Input: `query: string`, `limit?: number`
+  - Example: `node -e "import('./dist/tools/evolution.js').then(m=>m.evolutionLookup({query:'SE-0001',limit:3})).then(console.log)"`
+
+- `swift_lint_run`:
+  - Input: `path?: string`, `configPath?: string`, `strict?: boolean`
+  - Requires: `swiftlint` in PATH
+  - Example: `node -e "import('./dist/tools/lint.js').then(m=>m.lintRun({path:'/tmp/ci.swift'})).then(console.log)"`
+
+- `swift_format_apply`:
+  - Input: `code: string`, `swiftVersion?: string`, `assumeFilepath?: string`
+  - Requires: `swift-format` or `swiftformat` in PATH (server falls back gracefully)
+  - Example: `node -e "import('./dist/tools/format.js').then(m=>m.formatApply({code:'struct A{}'})).then(console.log)"`
+
+- `swift_guidelines_check`:
+  - Input: `code: string`
+  - Heuristics: naming, acronym casing, AppKit/SwiftUI bridge checks (monitors, first responder, child windows, identifiers)
+  - Example: `node -e "import('./dist/tools/guidelines.js').then(m=>m.guidelinesCheck({code:'class v{}'})).then(console.log)"`
+
+- `apple_docs_search`:
+  - Input: `query: string`, `frameworks?: string[]`, `kinds?: string[]`, `topics?: string[]`, `limit?: number`
+  - Uses MiniSearch index if present; falls back to file scan under `.cache/apple-docs`
+  - Example: `node -e "import('./dist/tools/apple_docs.js').then(m=>m.appleDocsSearch({query:'NSWindow',frameworks:['AppKit'],limit:5})).then(console.log)"`
+
+- `swift_symbol_lookup`:
+  - Input: `symbolOrSelector: string`
+  - Resolves aliases from `content/symbols/aliases.yaml`, then queries Apple docs
+  - Example: `node -e "import('./dist/tools/apple_docs.js').then(m=>m.swiftSymbolLookup('performKeyEquivalent:')).then(console.log)"`
+
+- `cocoa_patterns_search`:
+  - Input: `queryOrTag: string`, `limit?: number`
+  - Searches curated YAML patterns in repo `content/patterns/` and `.cache/content/patterns/`
+  - Example: `node -e "import('./dist/tools/patterns.js').then(m=>m.cocoaPatternsSearch({queryOrTag:'keyboard',limit:5})).then(console.log)"`
+
+- `hig_search`:
+  - Input: `query: string`, `limit?: number`
+  - Searches `.cache/hig` snapshots; prefers HTML `<title>` and canonical links
+  - Example: `node -e "import('./dist/tools/hig.js').then(m=>m.higSearch({query:'keyboard',limit:5})).then(console.log)"`
+
+- `search_hybrid`:
+  - Input: `query: string`, `sources?: ('apple'|'hig'|'pattern')[]`, `frameworks?: string[]`, `kinds?: string[]`, `topics?: string[]`, `tags?: string[]`, `limit?: number`
+  - Returns: `{ results, facets }` with facet counts
+  - Example (class): `node -e "import('./dist/tools/hybrid.js').then(m=>m.hybridSearch({query:'NSWindow',sources:['apple'],frameworks:['AppKit'],limit:5})).then(r=>console.log(JSON.stringify(r,null,2)))"`
+  - Example (method): `node -e "import('./dist/tools/hybrid.js').then(m=>m.hybridSearch({query:'performKeyEquivalent',sources:['apple'],frameworks:['AppKit'],kinds:['method'],limit:5})).then(r=>console.log(JSON.stringify(r,null,2)))"`
+
 Docker
 
 - Build: `docker build -t swift-mcp-server .`
@@ -64,6 +121,51 @@ Cache & Offline
   - The first successful `swift_update_sync` will build a MiniSearch index for Apple docs into `.cache/index/apple-docs.json`.
   - The sync also builds HIG (`.cache/index/hig.json`) and patterns (`.cache/index/patterns.json`) indexes for the hybrid search tool.
   - A small sample DocC page is bundled under `content/sample-docc/` and is copied into `.cache/apple-docs/` by `swift_update_sync` to enable CI smoke tests and local try-outs.
+
+**Contributing Content**
+
+- Patterns (`content/patterns/*.yaml`):
+  - Fields: `id: string` (unique), `title: string`, `tags?: string[]`, `summary?: string`, `snippet?: string (multiline with |)`, `takeaways?: string[]`.
+  - Keep IDs stable; use kebab-case (e.g., `appkit-child-window-attach`).
+  - After adding, run `npm run build && node dist/tools/update.js` to reindex.
+
+- Symbol Aliases (`content/symbols/aliases.yaml`):
+  - Map canonical symbol -> list of aliases/selectors (e.g., `NSWindow.makeFirstResponder:` -> `-[NSWindow makeFirstResponder:]`).
+  - Used by `swift_symbol_lookup` and improves Apple docs resolution.
+
+- Apple DocC / Dash Docsets (`.cache/apple-docs/<Framework>/...`):
+  - Place DocC JSON or Dash-extracted content under framework subfolders (AppKit/SwiftUI/Foundation/etc.).
+  - Run `swift_update_sync` to index. Bundled samples provide minimal Apple coverage for CI/local dev.
+
+**Troubleshooting**
+
+- Empty Apple results:
+  - Ensure `.cache/apple-docs/` contains DocC JSON (run `swift_update_sync` to seed samples).
+  - Check `.cache/index/apple-docs.json` exists; if not, re-run `swift_update_sync`.
+
+- Empty hybrid results:
+  - Ensure indexes exist in `.cache/index/` (apple-docs, hig, patterns, hybrid). Re-run `swift_update_sync`.
+  - Verify filters aren’t too narrow (try without `kinds`/`topics`/`tags`).
+
+- HIG fetch failures:
+  - Non-fatal. The sync is best-effort; you can manually place HTML/MD into `.cache/hig/` and re-run the sync to index.
+
+- Swift tools missing:
+  - Install via Homebrew (`brew install swift-format swiftformat swiftlint`) or use the full Docker image.
+
+**CI / Release Quick Reference**
+
+- CI (`.github/workflows/ci.yml`):
+  - macOS runner; caches npm and Homebrew; runs `npm ci`, build, smoke tests (docs/evolution/format/lint), `swift_update_sync`, and hybrid smoke tests (class + method).
+
+- Weekly Refresh (`.github/workflows/refresh-cache.yml`):
+  - Scheduled Mondays 06:00 UTC (and manual) to run `swift_update_sync` and keep caches/indexes fresh.
+
+- Release (`.github/workflows/release.yml`):
+  - Trigger: tag push `v*.*.*`.
+  - Builds `dist/` and attaches `dist.tar.gz` to a GitHub Release.
+  - Builds and pushes the full Docker image to GHCR as `ghcr.io/<owner>/swift-mcp-server:{tag},latest`.
+  - Permissions: `contents: write`, `packages: write` (uses `GITHUB_TOKEN`).
 
 Examples
 
