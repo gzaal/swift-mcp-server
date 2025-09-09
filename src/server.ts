@@ -8,6 +8,9 @@ import { lintRun } from "./tools/lint.js";
 import { formatApply } from "./tools/format.js";
 import { guidelinesCheck } from "./tools/guidelines.js";
 import { updateSync } from "./tools/update.js";
+import { appleDocsSearch, swiftSymbolLookup } from "./tools/apple_docs.js";
+import { cocoaPatternsSearch } from "./tools/patterns.js";
+import { higSearch } from "./tools/hig.js";
 
 const mcp = new McpServer({ name: "swift-mcp-server", version: "0.1.0" });
 
@@ -84,6 +87,58 @@ mcp.registerTool(
   async () => {
     const msg = await updateSync();
     return { content: [{ type: "text", text: msg }] };
+  }
+);
+
+// Apple docs search
+mcp.registerTool(
+  "apple_docs_search",
+  {
+    description: "Search Apple docs (DocC/docsets). Filters by frameworks optionally.",
+    inputSchema: { query: z.string(), frameworks: z.array(z.string()).optional(), limit: z.number().optional() },
+  },
+  async ({ query, frameworks, limit }) => {
+    const results = await appleDocsSearch({ query, frameworks, limit });
+    return { content: [{ type: "text", text: JSON.stringify(results, null, 2) }] };
+  }
+);
+
+// Cocoa patterns
+mcp.registerTool(
+  "cocoa_patterns_search",
+  {
+    description: "Search curated Cocoa patterns (keyboard/focus/window).",
+    inputSchema: { queryOrTag: z.string(), limit: z.number().optional() },
+  },
+  async ({ queryOrTag, limit }) => {
+    const results = await cocoaPatternsSearch({ queryOrTag, limit });
+    return { content: [{ type: "text", text: JSON.stringify(results, null, 2) }] };
+  }
+);
+
+// HIG search
+mcp.registerTool(
+  "hig_search",
+  {
+    description: "Search macOS HIG snapshots (local cache).",
+    inputSchema: { query: z.string(), limit: z.number().optional() },
+  },
+  async ({ query, limit }) => {
+    const results = await higSearch({ query, limit });
+    return { content: [{ type: "text", text: JSON.stringify(results, null, 2) }] };
+  }
+);
+
+// Symbol lookup
+mcp.registerTool(
+  "swift_symbol_lookup",
+  {
+    description: "Resolve a Swift symbol/selector to Apple docs hits.",
+    inputSchema: { symbolOrSelector: z.string() },
+  },
+  async ({ symbolOrSelector }) => {
+    const results = await swiftSymbolLookup(symbolOrSelector);
+    return { content: [{ type: "text", text: JSON.stringify(results, null, 2) }] };
   }
 );
 

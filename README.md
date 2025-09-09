@@ -16,11 +16,15 @@ Quick start (macOS)
 Tools
 
 - `swift_docs_search`: search TSPL (swift-book) and API Design Guidelines.
+- `apple_docs_search`: search local Apple DocC/docsets (AppKit/SwiftUI/Foundation...).
 - `swift_evolution_lookup`: lookup Swift Evolution proposals by ID or keyword.
 - `swift_lint_run`: run SwiftLint if installed.
 - `swift_format_apply`: format Swift source via swift-format or SwiftFormat.
 - `swift_guidelines_check`: heuristic API guideline checks on Swift code.
 - `swift_update_sync`: mirror swift-evolution and swift-book into `.cache`.
+- `cocoa_patterns_search`: search curated Cocoa patterns (keyboard/focus/window).
+- `hig_search`: search local HIG snapshots.
+- `swift_symbol_lookup`: resolve a symbol/selector to Apple doc hits.
 
 Docker
 
@@ -50,3 +54,6 @@ Cache & Offline
 
 - Run `swift_update_sync` first to populate `.cache` with `swift-evolution` and
   `swift-book`. `swift_docs_search` and `swift_evolution_lookup` use this cache.
+- For Apple/HIG:
+  - Place DocC/Dash docsets under `.cache/apple-docs/<Framework>/...` or run `swift_update_sync` to fetch a small HIG snapshot into `.cache/hig`.
+  - Curated patterns live in `content/patterns/*.yaml` and symbol aliases in `content/symbols/aliases.yaml`.

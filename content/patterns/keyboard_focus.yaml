@@ -1,0 +1,19 @@
+id: swiftui-key-interceptor
+title: Capture keyboard in SwiftUI popover
+tags: [keyboard, focus, SwiftUI, AppKit]
+summary: Use NSViewRepresentable to insert a first-responder NSView and avoid global NSEvent monitors.
+snippet: |
+  struct KeyInterceptor: NSViewRepresentable {
+    class View: NSView {
+      override var acceptsFirstResponder: Bool { true }
+      override func keyDown(with event: NSEvent) { /* handle */ }
+    }
+    func makeNSView(context: Context) -> View { View() }
+    func updateNSView(_ view: View, context: Context) {}
+  }
+  // In SwiftUI hierarchy
+  .overlay(KeyInterceptor().frame(width: 0, height: 0))
+takeaways:
+  - Prefer first-responder NSView for precise key handling
+  - Avoid leaking events via global/local NSEvent monitors
+

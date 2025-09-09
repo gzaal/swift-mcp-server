@@ -37,6 +37,28 @@ export async function updateSync(): Promise<string> {
   await httpSave("https://www.swift.org/documentation/api-design-guidelines/", apiGuidelinesHtml);
   steps.push("API Design Guidelines cached");
 
+  // Prepare Apple docs + HIG cache locations
+  const appleDocsDir = await ensureCacheDir("apple-docs");
+  const higDir = await ensureCacheDir("hig");
+  steps.push(`apple-docs dir ready at ${appleDocsDir}`);
+  steps.push(`HIG dir ready at ${higDir}`);
+
+  // Try to fetch a small subset of HIG pages (best-effort)
+  try {
+    const higIndex = join(higDir, "index.html");
+    await httpSave("https://developer.apple.com/design/human-interface-guidelines/", higIndex);
+    steps.push("HIG index cached");
+  } catch (e) {
+    steps.push("HIG index fetch skipped or failed");
+  }
+
+  try {
+    const kb = join(higDir, "keyboard-and-input.html");
+    await httpSave("https://developer.apple.com/design/human-interface-guidelines/keyboard-and-other-input", kb);
+    steps.push("HIG keyboard cached");
+  } catch {
+    steps.push("HIG keyboard fetch skipped or failed");
+  }
+
   return steps.join("; ");
 }
-

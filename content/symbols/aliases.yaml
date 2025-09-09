@@ -1,0 +1,9 @@
+NSWindow.makeFirstResponder:
+  - makeFirstResponder:
+  - -[NSWindow makeFirstResponder:]
+NSView.performKeyEquivalent:
+  - performKeyEquivalent:
+  - -[NSView performKeyEquivalent:]
+NSEvent.addLocalMonitorForEvents:
+  - addLocalMonitorForEvents:
+  - +[NSEvent addLocalMonitorForEventsMatchingMask:handler:]
