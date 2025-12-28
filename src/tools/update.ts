@@ -104,10 +104,10 @@ export async function updateSync(): Promise<string> {
       const loc = await saveAppleDocsIndex(built.index);
       steps.push(`Apple docs indexed (${built.count} docs) -> ${loc}`);
     } else {
-      steps.push("Apple docs index skipped (no docs)");
+      steps.push("Apple docs index skipped (no docs in apple-docs dir)");
     }
-  } catch (e) {
-    steps.push("Apple docs index failed");
+  } catch (e: any) {
+    steps.push(`Apple docs index failed: ${e?.message || e}`);
   }
 
   // Build HIG index
@@ -117,10 +117,10 @@ export async function updateSync(): Promise<string> {
       const loc = await saveHigIndex(built.index);
       steps.push(`HIG indexed (${built.count} docs) -> ${loc}`);
     } else {
-      steps.push("HIG index skipped (no docs)");
+      steps.push("HIG index skipped (no docs in hig dir)");
     }
-  } catch {
-    steps.push("HIG index failed");
+  } catch (e: any) {
+    steps.push(`HIG index failed: ${e?.message || e}`);
   }
 
   // Build Patterns index
@@ -130,10 +130,10 @@ export async function updateSync(): Promise<string> {
       const loc = await savePatternsIndex(built.index);
       steps.push(`Patterns indexed (${built.count}) -> ${loc}`);
     } else {
-      steps.push("Patterns index skipped (no content)");
+      steps.push("Patterns index skipped (no YAML files in content/patterns)");
     }
-  } catch {
-    steps.push("Patterns index failed");
+  } catch (e: any) {
+    steps.push(`Patterns index failed: ${e?.message || e}`);
   }
 
   // Build Unified hybrid index
@@ -143,10 +143,10 @@ export async function updateSync(): Promise<string> {
       const loc = await saveUnifiedIndex(built.index);
       steps.push(`Hybrid index built (${built.count}) -> ${loc}`);
     } else {
-      steps.push("Hybrid index skipped (no sources)");
+      steps.push("Hybrid index skipped (no sources found)");
     }
-  } catch {
-    steps.push("Hybrid index failed");
+  } catch (e: any) {
+    steps.push(`Hybrid index failed: ${e?.message || e}`);
   }
 
   return steps.join("; ");

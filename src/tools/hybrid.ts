@@ -29,7 +29,16 @@ export async function hybridSearch({ query, sources, frameworks, kinds, topics, 
       if (kinds?.length) hits = hits.filter((h) => h.kind && kinds.includes(h.kind));
       if (topics?.length) hits = hits.filter((h) => (h.topics || []).some((t: string) => topics.includes(t)));
       if (tags?.length) hits = hits.filter((h) => (h.tags || []).some((t: string) => tags.includes(t)));
-      results.push(...hits.slice(0, limit));
+
+      // Deduplicate by path or symbol+source to avoid showing same doc twice
+      const seen = new Set<string>();
+      for (const h of hits) {
+        const key = h.path || `${h.source}|${h.symbol || h.title}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        results.push(h);
+        if (results.length >= limit * 2) break; // get extras for sorting
+      }
     }
   } catch {}
 

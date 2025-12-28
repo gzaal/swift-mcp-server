@@ -162,6 +162,20 @@ Cache & Offline
   - Place DocC JSON or Dash-extracted content under framework subfolders (AppKit/SwiftUI/Foundation/etc.).
   - Run `swift_update_sync` to index. Bundled samples provide minimal Apple coverage for CI/local dev.
 
+**Known Limitations**
+
+- **HIG content requires JavaScript**: The Apple HIG pages are JavaScript-rendered SPAs. The cached HTML contains "This page requires JavaScript" placeholders instead of actual content. A headless browser scraper would be needed for full HIG support.
+
+- **Patterns and Recipes are user-defined**: The `cocoa_patterns_search` and `swift_recipe_lookup` tools return empty results by default. These are designed for user-contributed content:
+  - Add patterns to `content/patterns/*.yaml`
+  - Add recipes to `content/recipes/*.yaml`
+  - Run `swift_update_sync` to reindex after adding content.
+
+- **Apple docs require population**: The Apple docs index starts empty. Populate it by:
+  - Running `apple_docs_populate` tool with specific frameworks
+  - Using `apple_docsets_import` to import DocC/Dash content
+  - Placing DocC JSON files under `.cache/apple-docs/<Framework>/`
+
 **Troubleshooting**
 
 - Empty Apple results:

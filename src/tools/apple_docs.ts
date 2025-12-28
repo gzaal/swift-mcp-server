@@ -333,6 +333,7 @@ export type SymbolAliasMap = Record<string, string[]>; // canonical -> aliases
 
 export async function swiftSymbolLookup(symbolOrSelector: string): Promise<AppleDocHit[]> {
   const q = symbolOrSelector.trim();
+  const qLower = q.toLowerCase();
   const cacheDir = getCacheDir();
   const candidates = [
     join(cacheDir, "content", "symbols", "aliases.yaml"),
@@ -352,11 +353,21 @@ export async function swiftSymbolLookup(symbolOrSelector: string): Promise<Apple
   const queries = canonicals.size > 0 ? Array.from(canonicals) : [q];
   const results: AppleDocHit[] = [];
   for (const qq of queries) {
-    const hits = await appleDocsSearch({ query: qq, limit: 5 });
-    // prefer exact filename matches
-    hits.sort((a, b) => (a.symbol === qq ? -1 : 0) - (b.symbol === qq ? -1 : 0));
+    const hits = await appleDocsSearch({ query: qq, limit: 10 });
     results.push(...hits);
   }
+
+  // Strong preference for exact symbol name matches
+  const scoreSymbolMatch = (h: AppleDocHit): number => {
+    const sym = (h.symbol || "").toLowerCase();
+    if (sym === qLower) return 100; // exact match
+    if (sym.startsWith(qLower) || sym.endsWith(qLower)) return 50; // prefix/suffix
+    if (sym.includes(qLower)) return 25; // contains
+    return 0;
+  };
+
+  results.sort((a, b) => scoreSymbolMatch(b) - scoreSymbolMatch(a));
+
   // de-dup by symbol+framework
   const seen = new Set<string>();
   return results.filter((h) => {
