@@ -1,10 +1,10 @@
 import { join, basename } from "node:path";
-import { CACHE_DIR, searchFiles, fileText } from "../utils/cache.js";
+import { getCacheDir, searchFiles, fileText } from "../utils/cache.js";
 
 export type EvolutionLookupInput = { query: string; limit?: number };
 
 export async function evolutionLookup({ query, limit = 5 }: EvolutionLookupInput) {
-  const base = join(CACHE_DIR, "swift-evolution", "proposals");
+  const base = join(getCacheDir(), "swift-evolution", "proposals");
   const results: any[] = [];
 
   // If looks like SE-####, search exact

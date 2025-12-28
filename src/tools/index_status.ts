@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { stat, readFile } from "node:fs/promises";
-import { CACHE_DIR, pathExists } from "../utils/cache.js";
+import { getCacheDir, pathExists } from "../utils/cache.js";
 
 type IndexInfo = {
   path: string;
@@ -20,7 +20,7 @@ async function fileInfo(p: string): Promise<{ sizeBytes?: number; mtime?: string
 }
 
 async function indexInfo(relPath: string): Promise<IndexInfo> {
-  const p = join(CACHE_DIR, "index", relPath);
+  const p = join(getCacheDir(), "index", relPath);
   const exists = await pathExists(p);
   const info: IndexInfo = { path: p, exists };
   if (exists) {
@@ -42,7 +42,7 @@ export async function indexStatus() {
   const patterns = await indexInfo("patterns.json");
   const hybrid = await indexInfo("hybrid.json");
   return {
-    cacheDir: CACHE_DIR,
+    cacheDir: getCacheDir(),
     indexes: { apple, hig, patterns, hybrid },
   };
 }

@@ -1,5 +1,5 @@
 import { join, basename } from "node:path";
-import { ensureCacheDir, CACHE_DIR, pathExists } from "../utils/cache.js";
+import { ensureCacheDir, getCacheDir, pathExists } from "../utils/cache.js";
 import { runCommand } from "../utils/exec.js";
 import { cp, mkdtemp, readdir, stat } from "node:fs/promises";
 import os from "node:os";
@@ -154,7 +154,7 @@ export async function importDocsets({ sourcePathOrUrl, framework, reindex = true
       }
     }
 
-    return { ok: true, cacheDir: CACHE_DIR, imported: { totalFiles, frameworks: frameworksMap }, indexes } as ImportResult;
+    return { ok: true, cacheDir: getCacheDir(), imported: { totalFiles, frameworks: frameworksMap }, indexes } as ImportResult;
   } catch (e: any) {
     return { ok: false, message: e?.message || String(e) } as ImportResult;
   }

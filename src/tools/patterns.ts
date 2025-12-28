@@ -1,5 +1,5 @@
 import { join, resolve } from "node:path";
-import { CACHE_DIR, pathExists } from "../utils/cache.js";
+import { getCacheDir, pathExists } from "../utils/cache.js";
 import { loadYamlDir } from "../utils/index.js";
 
 export type Pattern = {
@@ -14,7 +14,7 @@ export type Pattern = {
 export type CocoaPatternsSearchInput = { queryOrTag: string; limit?: number };
 
 export async function cocoaPatternsSearch({ queryOrTag, limit = 5 }: CocoaPatternsSearchInput): Promise<Pattern[]> {
-  const cacheDir = join(CACHE_DIR, "content", "patterns");
+  const cacheDir = join(getCacheDir(), "content", "patterns");
   const repoDir = resolve(process.cwd(), "content", "patterns");
   const dirs: string[] = [];
   if (await pathExists(repoDir)) dirs.push(repoDir);

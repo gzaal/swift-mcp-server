@@ -1,7 +1,7 @@
 import MiniSearch from "minisearch";
 import fg from "fast-glob";
 import { join } from "node:path";
-import { CACHE_DIR } from "./cache.js";
+import { getCacheDir } from "./cache.js";
 import { readFile } from "node:fs/promises";
 import { stripHtml, loadYamlDir } from "./index.js";
 import { parseAppleDocAtPath } from "../tools/apple_docs.js";
@@ -26,10 +26,11 @@ export type UnifiedRecord = {
 };
 
 export async function buildUnifiedIndex(): Promise<{ index: MiniSearch; count: number } | null> {
+  const cacheDir = getCacheDir();
   const docs: UnifiedRecord[] = [];
 
   // Apple DocC
-  const appleBase = join(CACHE_DIR, "apple-docs");
+  const appleBase = join(cacheDir, "apple-docs");
   try {
     const appleFiles = await fg(["**/*.json", "**/*.md", "**/*.markdown", "**/*.html"], { cwd: appleBase, absolute: true });
     const seen = new Set<string>();
@@ -56,7 +57,7 @@ export async function buildUnifiedIndex(): Promise<{ index: MiniSearch; count: n
   } catch {}
 
   // HIG
-  const higBase = join(CACHE_DIR, "hig");
+  const higBase = join(cacheDir, "hig");
   try {
     const files = await fg(["**/*.html", "**/*.md", "**/*.markdown"], { cwd: higBase, absolute: true });
     for (const f of files) {
@@ -74,7 +75,7 @@ export async function buildUnifiedIndex(): Promise<{ index: MiniSearch; count: n
 
   // Patterns
   try {
-    const pattDirs = [join(CACHE_DIR, "content", "patterns"), join(process.cwd(), "content", "patterns")];
+    const pattDirs = [join(cacheDir, "content", "patterns"), join(process.cwd(), "content", "patterns")];
     for (const dir of pattDirs) {
       const yml = await loadYamlDir<any>(dir);
       for (const file of yml) {
@@ -89,7 +90,7 @@ export async function buildUnifiedIndex(): Promise<{ index: MiniSearch; count: n
 
   // Recipes
   try {
-    const recipeDirs = [join(CACHE_DIR, "content", "recipes"), join(process.cwd(), "content", "recipes")];
+    const recipeDirs = [join(cacheDir, "content", "recipes"), join(process.cwd(), "content", "recipes")];
     for (const dir of recipeDirs) {
       const yml = await loadYamlDir<any>(dir);
       for (const file of yml) {
@@ -132,7 +133,7 @@ export async function buildUnifiedIndex(): Promise<{ index: MiniSearch; count: n
 }
 
 export async function saveUnifiedIndex(mini: MiniSearch): Promise<string> {
-  const dir = join(CACHE_DIR, "index");
+  const dir = join(getCacheDir(), "index");
   await (await import("node:fs/promises")).mkdir(dir, { recursive: true });
   const p = join(dir, "hybrid.json");
   await (await import("node:fs/promises")).writeFile(p, JSON.stringify(mini.toJSON()), "utf8");
@@ -140,7 +141,7 @@ export async function saveUnifiedIndex(mini: MiniSearch): Promise<string> {
 }
 
 export async function loadUnifiedIndex(): Promise<MiniSearch | null> {
-  const p = join(CACHE_DIR, "index", "hybrid.json");
+  const p = join(getCacheDir(), "index", "hybrid.json");
   try {
     const txt = await (await import("node:fs/promises")).readFile(p, "utf8");
     const mini = MiniSearch.loadJSON(txt, {

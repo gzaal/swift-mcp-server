@@ -4,11 +4,19 @@ import fg from "fast-glob";
 
 // Allow overriding the cache location for shared/team caches.
 // If SWIFT_MCP_CACHE_DIR is set, use it as-is; otherwise default to CWD/.cache.
-const DEFAULT_CACHE_DIR = resolve(process.cwd(), ".cache");
-export const CACHE_DIR = resolve(process.env.SWIFT_MCP_CACHE_DIR || DEFAULT_CACHE_DIR);
+// This is a function so tests can override the env var after module load.
+export function getCacheDir(): string {
+  const defaultCacheDir = resolve(process.cwd(), ".cache");
+  return resolve(process.env.SWIFT_MCP_CACHE_DIR || defaultCacheDir);
+}
+
+// Deprecated: Use getCacheDir() instead. This is kept for backward compatibility
+// but evaluates at import time, which breaks tests.
+export const CACHE_DIR = getCacheDir();
 
 export async function ensureCacheDir(sub?: string): Promise<string> {
-  const dir = sub ? join(CACHE_DIR, sub) : CACHE_DIR;
+  const cacheDir = getCacheDir();
+  const dir = sub ? join(cacheDir, sub) : cacheDir;
   await mkdir(dir, { recursive: true });
   return dir;
 }

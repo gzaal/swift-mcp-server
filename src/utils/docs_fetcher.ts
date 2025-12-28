@@ -1,6 +1,6 @@
 import { writeFile, mkdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { CACHE_DIR, pathExists } from "./cache.js";
+import { getCacheDir, pathExists } from "./cache.js";
 
 export type AppleDocSymbol = {
   identifier: string;
@@ -234,7 +234,7 @@ function parseSymbolData(data: any, framework: string): AppleDocSymbol | null {
 }
 
 async function saveSymbolsToCache(framework: string, symbols: AppleDocSymbol[]): Promise<void> {
-  const dir = join(CACHE_DIR, "apple-docs", framework);
+  const dir = join(getCacheDir(), "apple-docs", framework);
   await mkdir(dir, { recursive: true });
 
   for (const symbol of symbols) {

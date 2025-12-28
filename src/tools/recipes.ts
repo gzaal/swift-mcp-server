@@ -1,5 +1,5 @@
 import { join, resolve } from "node:path";
-import { CACHE_DIR, pathExists } from "../utils/cache.js";
+import { getCacheDir, pathExists } from "../utils/cache.js";
 import { loadYamlDir } from "../utils/index.js";
 
 export type Recipe = {
@@ -17,7 +17,7 @@ export type RecipeLookupInput = { queryOrId: string; limit?: number };
 
 export async function swiftRecipeLookup({ queryOrId, limit = 5 }: RecipeLookupInput): Promise<Recipe[]> {
   const repoDir = resolve(process.cwd(), "content", "recipes");
-  const cacheDir = join(CACHE_DIR, "content", "recipes");
+  const cacheDir = join(getCacheDir(), "content", "recipes");
   const dirs: string[] = [];
   if (await pathExists(repoDir)) dirs.push(repoDir);
   if (await pathExists(cacheDir)) dirs.push(cacheDir);

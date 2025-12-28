@@ -1,6 +1,6 @@
 import MiniSearch from "minisearch";
 import { join, resolve } from "node:path";
-import { CACHE_DIR, pathExists } from "./cache.js";
+import { getCacheDir, pathExists } from "./cache.js";
 import { loadYamlDir } from "./index.js";
 
 export type PatternRec = {
@@ -17,7 +17,7 @@ export type PatternRec = {
 
 export async function buildPatternsIndex(): Promise<{ index: MiniSearch; count: number } | null> {
   const repoDir = resolve(process.cwd(), "content", "patterns");
-  const cacheDir = join(CACHE_DIR, "content", "patterns");
+  const cacheDir = join(getCacheDir(), "content", "patterns");
   const dirs: string[] = [];
   if (await pathExists(repoDir)) dirs.push(repoDir);
   if (await pathExists(cacheDir)) dirs.push(cacheDir);
@@ -54,7 +54,7 @@ export async function buildPatternsIndex(): Promise<{ index: MiniSearch; count: 
 }
 
 export async function savePatternsIndex(mini: MiniSearch): Promise<string> {
-  const dir = join(CACHE_DIR, "index");
+  const dir = join(getCacheDir(), "index");
   await (await import("node:fs/promises")).mkdir(dir, { recursive: true });
   const p = join(dir, "patterns.json");
   await (await import("node:fs/promises")).writeFile(p, JSON.stringify(mini.toJSON()), "utf8");
@@ -62,7 +62,7 @@ export async function savePatternsIndex(mini: MiniSearch): Promise<string> {
 }
 
 export async function loadPatternsIndex(): Promise<MiniSearch | null> {
-  const p = join(CACHE_DIR, "index", "patterns.json");
+  const p = join(getCacheDir(), "index", "patterns.json");
   try {
     const txt = await (await import("node:fs/promises")).readFile(p, "utf8");
     const mini = MiniSearch.loadJSON(txt, { fields: ["title", "summary", "snippet", "tags"], storeFields: ["_id", "id", "title", "tags", "summary", "snippet", "takeaways", "path", "source"] });

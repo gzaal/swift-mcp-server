@@ -1,7 +1,7 @@
 import fg from "fast-glob";
 import { join } from "node:path";
 import { readFile } from "node:fs/promises";
-import { CACHE_DIR, pathExists } from "./cache.js";
+import { getCacheDir, pathExists } from "./cache.js";
 
 export type TSPLRecord = {
   _id: string;
@@ -20,7 +20,7 @@ export type TSPLRecord = {
  * Extracts chapters, sections, code examples, and key content.
  */
 export async function parseTSPLFiles(): Promise<TSPLRecord[]> {
-  const base = join(CACHE_DIR, "swift-book", "TSPL.docc");
+  const base = join(getCacheDir(), "swift-book", "TSPL.docc");
   if (!(await pathExists(base))) return [];
 
   const files = await fg(["**/*.md"], { cwd: base, absolute: true });
@@ -135,7 +135,7 @@ function parseMarkdownFile(filePath: string, content: string): TSPLRecord[] {
  * Get count of parseable TSPL files
  */
 export async function getTSPLStats(): Promise<{ fileCount: number; estimatedRecords: number }> {
-  const base = join(CACHE_DIR, "swift-book", "TSPL.docc");
+  const base = join(getCacheDir(), "swift-book", "TSPL.docc");
   if (!(await pathExists(base))) return { fileCount: 0, estimatedRecords: 0 };
 
   const files = await fg(["**/*.md"], { cwd: base, absolute: true });

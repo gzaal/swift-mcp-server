@@ -1,7 +1,7 @@
 import MiniSearch from "minisearch";
 import fg from "fast-glob";
 import { join } from "node:path";
-import { CACHE_DIR } from "./cache.js";
+import { getCacheDir } from "./cache.js";
 import { readFile } from "node:fs/promises";
 import { stripHtml } from "./index.js";
 
@@ -23,7 +23,7 @@ function parseHigHtml(html: string): { title?: string; url?: string; text: strin
   return { title, url, text: stripHtml(html) };
 }
 
-export async function buildHigIndex(base = join(CACHE_DIR, "hig")): Promise<{ index: MiniSearch; count: number } | null> {
+export async function buildHigIndex(base = join(getCacheDir(), "hig")): Promise<{ index: MiniSearch; count: number } | null> {
   const files = await fg(["**/*.html", "**/*.md", "**/*.markdown"], { cwd: base, absolute: true });
   if (files.length === 0) return null;
   const docs: HigRecord[] = [];
@@ -60,7 +60,7 @@ export async function buildHigIndex(base = join(CACHE_DIR, "hig")): Promise<{ in
 }
 
 export async function saveHigIndex(mini: MiniSearch): Promise<string> {
-  const dir = join(CACHE_DIR, "index");
+  const dir = join(getCacheDir(), "index");
   await (await import("node:fs/promises")).mkdir(dir, { recursive: true });
   const p = join(dir, "hig.json");
   await (await import("node:fs/promises")).writeFile(p, JSON.stringify(mini.toJSON()), "utf8");
@@ -68,7 +68,7 @@ export async function saveHigIndex(mini: MiniSearch): Promise<string> {
 }
 
 export async function loadHigIndex(): Promise<MiniSearch | null> {
-  const p = join(CACHE_DIR, "index", "hig.json");
+  const p = join(getCacheDir(), "index", "hig.json");
   try {
     const txt = await (await import("node:fs/promises")).readFile(p, "utf8");
     const mini = MiniSearch.loadJSON(txt, { idField: "_id", fields: ["title", "summary"], storeFields: ["_id", "title", "summary", "url", "path", "source"] });

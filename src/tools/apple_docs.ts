@@ -1,5 +1,5 @@
 import { join, sep, resolve } from "node:path";
-import { CACHE_DIR, pathExists } from "../utils/cache.js";
+import { getCacheDir, pathExists } from "../utils/cache.js";
 import { searchInFiles, readYamlFile } from "../utils/index.js";
 import fg from "fast-glob";
 import { readFile } from "node:fs/promises";
@@ -214,7 +214,8 @@ export async function parseAppleDocAtPath(p: string, excerpt?: string): Promise<
 }
 
 export async function appleDocsSearch({ query, frameworks, kinds, topics, limit = 5 }: AppleDocsSearchInput): Promise<AppleDocHit[]> {
-  const bases = [join(CACHE_DIR, "apple-docs"), resolve(process.cwd(), ".cache", "apple-docs")];
+  const cacheDir = getCacheDir();
+  const bases = [join(cacheDir, "apple-docs"), resolve(process.cwd(), ".cache", "apple-docs")];
   const base = (await pathExists(bases[0])) ? bases[0] : bases[1];
   let patterns = ["**/*.json", "**/*.md", "**/*.markdown", "**/*.html"]; // DocC JSON, markdown, HTML
   if (frameworks && frameworks.length > 0) {
@@ -332,8 +333,9 @@ export type SymbolAliasMap = Record<string, string[]>; // canonical -> aliases
 
 export async function swiftSymbolLookup(symbolOrSelector: string): Promise<AppleDocHit[]> {
   const q = symbolOrSelector.trim();
+  const cacheDir = getCacheDir();
   const candidates = [
-    join(CACHE_DIR, "content", "symbols", "aliases.yaml"),
+    join(cacheDir, "content", "symbols", "aliases.yaml"),
     resolve(process.cwd(), "content", "symbols", "aliases.yaml"),
   ];
   let aliases: SymbolAliasMap = {};

@@ -1,7 +1,7 @@
 import MiniSearch from "minisearch";
 import fg from "fast-glob";
 import { join } from "node:path";
-import { CACHE_DIR, pathExists } from "./cache.js";
+import { getCacheDir, pathExists } from "./cache.js";
 import { parseAppleDocAtPath, AppleDocHit } from "../tools/apple_docs.js";
 
 export type AppleDocRecord = AppleDocHit & { _id: string; source: "apple" };
@@ -19,7 +19,7 @@ function miniOptions() {
 }
 
 export async function buildAppleDocsIndex(): Promise<{ index: MiniSearch; count: number } | null> {
-  const base = join(CACHE_DIR, "apple-docs");
+  const base = join(getCacheDir(), "apple-docs");
   if (!(await pathExists(base))) return null;
   const files = await fg(["**/*.json", "**/*.md", "**/*.markdown", "**/*.html"], { cwd: base, absolute: true });
   const docs: AppleDocRecord[] = [];
@@ -39,7 +39,7 @@ export async function buildAppleDocsIndex(): Promise<{ index: MiniSearch; count:
 }
 
 export async function saveAppleDocsIndex(mini: MiniSearch): Promise<string> {
-  const dir = join(CACHE_DIR, "index");
+  const dir = join(getCacheDir(), "index");
   await (await import("node:fs/promises")).mkdir(dir, { recursive: true });
   const p = join(dir, "apple-docs.json");
   await (await import("node:fs/promises")).writeFile(p, JSON.stringify(mini.toJSON()), "utf8");
@@ -47,7 +47,7 @@ export async function saveAppleDocsIndex(mini: MiniSearch): Promise<string> {
 }
 
 export async function loadAppleDocsIndex(): Promise<MiniSearch | null> {
-  const p = join(CACHE_DIR, "index", "apple-docs.json");
+  const p = join(getCacheDir(), "index", "apple-docs.json");
   try {
     const txt = await (await import("node:fs/promises")).readFile(p, "utf8");
     const mini = MiniSearch.loadJSON(txt, miniOptions());
