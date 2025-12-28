@@ -2,7 +2,10 @@ import { mkdir, readFile, writeFile, stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import fg from "fast-glob";
 
-export const CACHE_DIR = resolve(process.cwd(), ".cache");
+// Allow overriding the cache location for shared/team caches.
+// If SWIFT_MCP_CACHE_DIR is set, use it as-is; otherwise default to CWD/.cache.
+const DEFAULT_CACHE_DIR = resolve(process.cwd(), ".cache");
+export const CACHE_DIR = resolve(process.env.SWIFT_MCP_CACHE_DIR || DEFAULT_CACHE_DIR);
 
 export async function ensureCacheDir(sub?: string): Promise<string> {
   const dir = sub ? join(CACHE_DIR, sub) : CACHE_DIR;
@@ -48,4 +51,3 @@ export async function searchFiles(
   }
   return results;
 }
-

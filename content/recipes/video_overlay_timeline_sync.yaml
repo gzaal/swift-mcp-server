@@ -1,0 +1,27 @@
+id: timeline-synced-overlays-avsynchronizedlayer
+title: Timeline-synced overlays with AVSynchronizedLayer
+tags: [AVFoundation, AVSynchronizedLayer, overlays]
+summary: Sync overlay animations to media time using AVSynchronizedLayer attached to an AVPlayerItem.
+prerequisites:
+  - AVFoundation
+steps:
+  - Create AVPlayerItem and AVPlayer
+  - Add AVSynchronizedLayer(playerItem:) to the view's layer
+  - Add caption/marker sublayers under the sync layer
+snippet: |
+  let item = AVPlayerItem(asset: asset)
+  let player = AVPlayer(playerItem: item)
+  let playerLayer = AVPlayerLayer(player: player)
+  view.layer?.addSublayer(playerLayer)
+
+  let syncLayer = AVSynchronizedLayer(playerItem: item)
+  syncLayer.frame = view.bounds
+  view.layer?.addSublayer(syncLayer)
+
+  let caption = CATextLayer()
+  caption.string = "Hello"
+  caption.frame = CGRect(x: 20, y: 20, width: 200, height: 40)
+  syncLayer.addSublayer(caption)
+references:
+  - https://developer.apple.com/documentation/avfoundation/avsynchronizedlayer
+

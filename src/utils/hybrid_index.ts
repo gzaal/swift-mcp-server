@@ -8,7 +8,7 @@ import { parseAppleDocAtPath } from "../tools/apple_docs.js";
 
 export type UnifiedRecord = {
   _id: string;
-  source: "apple" | "hig" | "pattern";
+  source: "apple" | "hig" | "pattern" | "recipe";
   symbol?: string; // for Apple
   title?: string; // for HIG/Patterns
   framework?: string;
@@ -71,7 +71,7 @@ export async function buildUnifiedIndex(): Promise<{ index: MiniSearch; count: n
 
   // Patterns
   try {
-    const pattDirs = [join(CACHE_DIR, "content", "patterns")];
+    const pattDirs = [join(CACHE_DIR, "content", "patterns"), join(process.cwd(), "content", "patterns")];
     for (const dir of pattDirs) {
       const yml = await loadYamlDir<any>(dir);
       for (const file of yml) {
@@ -79,6 +79,21 @@ export async function buildUnifiedIndex(): Promise<{ index: MiniSearch; count: n
         for (const p of list) {
           if (!p?.id || !p?.title) continue;
           docs.push({ _id: `pattern|${file.path}#${p.id}`, source: "pattern", title: p.title, tags: p.tags || [], summary: p.summary, snippet: p.snippet, path: file.path });
+        }
+      }
+    }
+  } catch {}
+
+  // Recipes
+  try {
+    const recipeDirs = [join(CACHE_DIR, "content", "recipes"), join(process.cwd(), "content", "recipes")];
+    for (const dir of recipeDirs) {
+      const yml = await loadYamlDir<any>(dir);
+      for (const file of yml) {
+        const list = Array.isArray(file.data) ? file.data : [file.data];
+        for (const r of list) {
+          if (!r?.id || !r?.title) continue;
+          docs.push({ _id: `recipe|${file.path}#${r.id}`, source: "recipe", title: r.title, tags: r.tags || [], summary: r.summary, snippet: r.snippet, path: file.path });
         }
       }
     }

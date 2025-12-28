@@ -1,0 +1,33 @@
+id: export-overlays-coreanimation-tool
+title: Export video with overlays using AVVideoCompositionCoreAnimationTool
+tags: [AVFoundation, export, overlays]
+summary: Compose a Core Animation layer tree with the video and use AVVideoCompositionCoreAnimationTool to bake overlays into exported output.
+prerequisites:
+  - AVFoundation
+steps:
+  - Build parent CALayer with videoLayer and overlayLayer
+  - Configure AVMutableVideoComposition (renderSize, frameDuration)
+  - Set animationTool with parent+videoLayer
+snippet: |
+  let composition = AVMutableComposition()
+  // add tracks...
+  let videoComposition = AVMutableVideoComposition()
+  videoComposition.renderSize = CGSize(width: 1920, height: 1080)
+  videoComposition.frameDuration = CMTime(value: 1, timescale: 30)
+
+  let parent = CALayer()
+  let videoLayer = CALayer()
+  let overlayLayer = CALayer() // add sublayers for captions, etc.
+  parent.frame = CGRect(x: 0, y: 0, width: 1920, height: 1080)
+  videoLayer.frame = parent.frame
+  overlayLayer.frame = parent.frame
+  parent.addSublayer(videoLayer)
+  parent.addSublayer(overlayLayer)
+
+  videoComposition.animationTool = AVVideoCompositionCoreAnimationTool(
+    postProcessingAsVideoLayer: videoLayer, in: parent)
+
+  // Export via AVAssetExportSession using videoComposition
+references:
+  - https://developer.apple.com/documentation/avfoundation/avvideocompositioncoreanimationtool
+

@@ -1,0 +1,16 @@
+id: swiftui-overlay-hit-testing
+title: Manage hit-testing for SwiftUI overlays
+tags: [SwiftUI, overlay, hit-testing, zIndex]
+summary: Use .allowsHitTesting and zIndex to control whether an overlay intercepts or passes events through.
+snippet: |
+  ZStack {
+    PlayerView()
+    Controls()
+      .allowsHitTesting(true)   # Enable if overlay should be interactive
+      .zIndex(1)                # Ensure overlay sits above the base layer
+  }
+takeaways:
+  - Use .allowsHitTesting(false) for decorative overlays
+  - Raise overlay stacking with .zIndex when needed
+  - Consider .contentShape to fine-tune tappable regions
+

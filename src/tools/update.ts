@@ -70,12 +70,31 @@ export async function updateSync(): Promise<string> {
     steps.push("HIG index fetch skipped or failed");
   }
 
+  // Try a representative HIG page (paths occasionally change). Use current "inputs" section.
   try {
-    const kb = join(higDir, "keyboard-and-input.html");
-    await httpSave("https://developer.apple.com/design/human-interface-guidelines/keyboard-and-other-input", kb);
-    steps.push("HIG keyboard cached");
+    const inputs = join(higDir, "inputs.html");
+    await httpSave("https://developer.apple.com/design/human-interface-guidelines/inputs", inputs);
+    steps.push("HIG inputs cached");
   } catch {
-    steps.push("HIG keyboard fetch skipped or failed");
+    steps.push("HIG inputs fetch skipped or failed");
+  }
+
+  // Fetch a small set of additional stable HIG pages (best-effort)
+  const higPages: Array<{ slug: string; file: string }> = [
+    { slug: "typography", file: "typography.html" },
+    { slug: "color", file: "color.html" },
+    { slug: "buttons", file: "buttons.html" },
+    { slug: "icons", file: "icons.html" },
+    { slug: "menus", file: "menus.html" },
+    { slug: "windows", file: "windows.html" },
+  ];
+  for (const p of higPages) {
+    try {
+      await httpSave(`https://developer.apple.com/design/human-interface-guidelines/${p.slug}`, join(higDir, p.file));
+      steps.push(`HIG ${p.slug} cached`);
+    } catch {
+      steps.push(`HIG ${p.slug} fetch skipped or failed`);
+    }
   }
 
   // Build Apple docs MiniSearch index (best-effort)

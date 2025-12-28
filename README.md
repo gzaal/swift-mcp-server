@@ -28,6 +28,15 @@ Tools
 - `swift_symbol_lookup`: resolve a symbol/selector to Apple doc hits.
 - `search_hybrid`: unified search across Apple DocC, HIG, and patterns.
   - Returns `{ results, facets }` where `facets` contains sorted counts for `sources`, `frameworks`, `kinds`, `topics`, and `tags`.
+- `index_status`: report cache directory and index statuses (apple/hig/patterns/hybrid).
+  - Example: `node -e "import('./dist/tools/index_status.js').then(m=>m.indexStatus()).then(r=>console.log(JSON.stringify(r,null,2)))"`
+- `apple_docsets_import`: import Apple DocC/Dash content from a local path or URL into `.cache/apple-docs/<Framework>/`, then reindex Apple and Hybrid.
+  - Input: `sourcePathOrUrl: string`, `framework?: string`, `reindex?: boolean`
+  - Example (local folder with framework subdir): `node -e "import('./dist/tools/docsets_import.js').then(m=>m.importDocsets({sourcePathOrUrl:'content/sample-docc'})).then(console.log)"`
+  - Example (archive URL): `node -e "import('./dist/tools/docsets_import.js').then(m=>m.importDocsets({sourcePathOrUrl:'https://example.com/AppKit-docs.zip'})).then(console.log)"`
+- `swift_recipe_lookup`: lookup YAML-backed development recipes (e.g., video overlays, export).
+  - Input: `queryOrId: string`, `limit?: number`
+  - Example: `node -e "import('./dist/tools/recipes.js').then(m=>m.swiftRecipeLookup({queryOrId:'overlay',limit:3})).then(r=>console.log(JSON.stringify(r,null,2)))"`
 
 **Tool Usage**
 
@@ -86,6 +95,21 @@ Tools
   - Example (class): `node -e "import('./dist/tools/hybrid.js').then(m=>m.hybridSearch({query:'NSWindow',sources:['apple'],frameworks:['AppKit'],limit:5})).then(r=>console.log(JSON.stringify(r,null,2)))"`
   - Example (method): `node -e "import('./dist/tools/hybrid.js').then(m=>m.hybridSearch({query:'performKeyEquivalent',sources:['apple'],frameworks:['AppKit'],kinds:['method'],limit:5})).then(r=>console.log(JSON.stringify(r,null,2)))"`
 
+- `index_status`:
+  - Input: none
+  - Reports cache directory and index statuses (apple/hig/patterns/hybrid)
+  - Example: `node -e "import('./dist/tools/index_status.js').then(m=>m.indexStatus()).then(r=>console.log(JSON.stringify(r,null,2)))"`
+
+- `apple_docsets_import`:
+  - Input: `sourcePathOrUrl: string`, `framework?: string`, `reindex?: boolean`
+  - Imports Apple DocC/Dash content into `.cache/apple-docs/<Framework>/` and reindexes
+  - Example: `node -e "import('./dist/tools/docsets_import.js').then(m=>m.importDocsets({sourcePathOrUrl:'content/sample-docc'})).then(console.log)"`
+
+- `swift_recipe_lookup`:
+  - Input: `queryOrId: string`, `limit?: number`
+  - Looks up YAML-backed development recipes stored in `content/recipes/`
+  - Example: `node -e "import('./dist/tools/recipes.js').then(m=>m.swiftRecipeLookup({queryOrId:'video overlay'})).then(r=>console.log(JSON.stringify(r,null,2)))"`
+
 Docker
 
 - Build: `docker build -t swift-mcp-server .`
@@ -116,6 +140,7 @@ Cache & Offline
   `swift-book`. `swift_docs_search` and `swift_evolution_lookup` use this cache.
 - For Apple/HIG:
   - Place DocC/Dash docsets under `.cache/apple-docs/<Framework>/...` or run `swift_update_sync` to fetch a small HIG snapshot into `.cache/hig`.
+  - Alternatively use `apple_docsets_import` to ingest content and reindex automatically.
   - Curated patterns live in `content/patterns/*.yaml` and symbol aliases in `content/symbols/aliases.yaml`.
   - A scheduled workflow refreshes HIG weekly; use `workflow_dispatch` to run it on-demand.
   - The first successful `swift_update_sync` will build a MiniSearch index for Apple docs into `.cache/index/apple-docs.json`.
@@ -142,6 +167,7 @@ Cache & Offline
 - Empty Apple results:
   - Ensure `.cache/apple-docs/` contains DocC JSON (run `swift_update_sync` to seed samples).
   - Check `.cache/index/apple-docs.json` exists; if not, re-run `swift_update_sync`.
+  - If ingesting docsets, try `apple_docsets_import` and then `index_status`.
 
 - Empty hybrid results:
   - Ensure indexes exist in `.cache/index/` (apple-docs, hig, patterns, hybrid). Re-run `swift_update_sync`.
@@ -173,4 +199,6 @@ Examples
   - `node -e "import('./dist/tools/hybrid.js').then(m=>m.hybridSearch({query:'NSWindow', sources:['apple'], frameworks:['AppKit'], limit:5})).then(r=>console.log(JSON.stringify(r,null,2)))"`
 - Hybrid Apple method search with kind filter:
   - `node -e "import('./dist/tools/hybrid.js').then(m=>m.hybridSearch({query:'performKeyEquivalent', sources:['apple'], frameworks:['AppKit'], kinds:['method'], limit:5})).then(r=>console.log(JSON.stringify(r,null,2)))"`
+ 
+See `docs/quickstart.md` for a quick setup, and `docs/recipes/video_overlay.md` for an end-to-end overlay module walkthrough.
 See CONTRIBUTING.md for guidelines on adding content and tools.

@@ -50,6 +50,7 @@ export async function buildHigIndex(base = join(CACHE_DIR, "hig")): Promise<{ in
   }
   if (docs.length === 0) return null;
   const mini = new MiniSearch<HigRecord>({
+    idField: "_id",
     fields: ["title", "summary"],
     storeFields: ["_id", "title", "summary", "url", "path", "source"],
     searchOptions: { boost: { title: 3 }, fuzzy: 0.1, prefix: true },
@@ -70,7 +71,7 @@ export async function loadHigIndex(): Promise<MiniSearch | null> {
   const p = join(CACHE_DIR, "index", "hig.json");
   try {
     const txt = await (await import("node:fs/promises")).readFile(p, "utf8");
-    const mini = MiniSearch.loadJSON(txt, { fields: ["title", "summary"], storeFields: ["_id", "title", "summary", "url", "path", "source"] });
+    const mini = MiniSearch.loadJSON(txt, { idField: "_id", fields: ["title", "summary"], storeFields: ["_id", "title", "summary", "url", "path", "source"] });
     return mini;
   } catch {
     return null;

@@ -1,0 +1,18 @@
+id: avsynchronizedlayer-timeline-overlays
+title: Timeline-synced overlays with AVSynchronizedLayer
+tags: [AVFoundation, AVSynchronizedLayer, overlays, timing]
+summary: Attach overlay sublayers to an AVSynchronizedLayer to sync Core Animation content to an AVPlayerItem's timing.
+snippet: |
+  let syncLayer = AVSynchronizedLayer(playerItem: item)
+  syncLayer.frame = view.bounds
+  view.layer?.addSublayer(syncLayer)
+
+  let caption = CATextLayer()
+  caption.string = "Hello";
+  caption.frame = CGRect(x: 20, y: 20, width: 200, height: 40)
+  syncLayer.addSublayer(caption)
+takeaways:
+  - AVSynchronizedLayer aligns animations with media time
+  - Prefer for time-based overlay elements (captions, markers)
+  - Combine with AVPlayerLayer as sibling or ancestor
+

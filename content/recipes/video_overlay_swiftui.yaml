@@ -1,0 +1,41 @@
+id: video-overlay-swiftui
+title: SwiftUI overlay on AVPlayerLayer (macOS)
+tags: [SwiftUI, AVFoundation, overlay, NSViewRepresentable]
+summary: Display video with AVPlayerLayer and overlay SwiftUI controls using ZStack.
+prerequisites:
+  - AVFoundation, SwiftUI
+steps:
+  - Wrap AVPlayerLayer in NSViewRepresentable
+  - Place SwiftUI overlay in ZStack above the video view
+  - Use .allowsHitTesting and .zIndex as needed
+snippet: |
+  import AVFoundation
+  import SwiftUI
+
+  struct PlayerLayerView: NSViewRepresentable {
+    let player: AVPlayer
+    func makeNSView(context: Context) -> NSView {
+      let view = NSView()
+      let layer = AVPlayerLayer(player: player)
+      layer.videoGravity = .resizeAspect
+      view.wantsLayer = true
+      view.layer = layer
+      return view
+    }
+    func updateNSView(_ view: NSView, context: Context) {
+      (view.layer as? AVPlayerLayer)?.player = player
+    }
+  }
+
+  struct PlayerWithOverlay: View {
+    let player: AVPlayer
+    var body: some View {
+      ZStack(alignment: .topLeading) {
+        PlayerLayerView(player: player)
+        Controls().padding().zIndex(1)
+      }
+    }
+  }
+references:
+  - https://developer.apple.com/documentation/avfoundation/avplayerlayer
+

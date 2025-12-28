@@ -12,6 +12,10 @@ import { appleDocsSearch, swiftSymbolLookup } from "./tools/apple_docs.js";
 import { cocoaPatternsSearch } from "./tools/patterns.js";
 import { higSearch } from "./tools/hig.js";
 import { hybridSearch } from "./tools/hybrid.js";
+import { indexStatus } from "./tools/index_status.js";
+import { importDocsets } from "./tools/docsets_import.js";
+import { swiftRecipeLookup } from "./tools/recipes.js";
+import { swiftScaffoldModule } from "./tools/scaffold.js";
 
 const mcp = new McpServer({ name: "swift-mcp-server", version: "0.1.0" });
 
@@ -161,6 +165,64 @@ mcp.registerTool(
   async (input) => {
     const payload = await hybridSearch(input as any);
     return { content: [{ type: "text", text: JSON.stringify(payload, null, 2) }] };
+  }
+);
+
+// Index status / observability
+mcp.registerTool(
+  "index_status",
+  {
+    description: "Report cache directory and index statuses (apple/hig/patterns/hybrid).",
+    inputSchema: {},
+  },
+  async () => {
+    const res = await indexStatus();
+    return { content: [{ type: "text", text: JSON.stringify(res, null, 2) }] };
+  }
+);
+
+// Apple docsets import
+mcp.registerTool(
+  "apple_docsets_import",
+  {
+    description: "Import Apple DocC/Dash content from a path or URL into .cache/apple-docs/<Framework>/ and reindex.",
+    inputSchema: { sourcePathOrUrl: z.string(), framework: z.string().optional(), reindex: z.boolean().optional() },
+  },
+  async ({ sourcePathOrUrl, framework, reindex }) => {
+    const res = await importDocsets({ sourcePathOrUrl, framework, reindex });
+    return { content: [{ type: "text", text: JSON.stringify(res, null, 2) }] };
+  }
+);
+
+// Recipes lookup
+mcp.registerTool(
+  "swift_recipe_lookup",
+  {
+    description: "Lookup Swift development recipes (YAML-backed).",
+    inputSchema: { queryOrId: z.string(), limit: z.number().optional() },
+  },
+  async ({ queryOrId, limit }) => {
+    const results = await swiftRecipeLookup({ queryOrId, limit });
+    return { content: [{ type: "text", text: JSON.stringify(results, null, 2) }] };
+  }
+);
+
+// Swift module scaffolding
+mcp.registerTool(
+  "swift_scaffold_module",
+  {
+    description: "Generate a Swift Package with a video overlay module scaffold.",
+    inputSchema: {
+      destination: z.string(),
+      platform: z.enum(["macOS", "iOS"]),
+      moduleName: z.string(),
+      overlayStyle: z.enum(["swiftui", "calayer", "caanimation-export"]),
+      overwrite: z.boolean().optional(),
+    },
+  },
+  async ({ destination, platform, moduleName, overlayStyle, overwrite }) => {
+    const res = await swiftScaffoldModule({ destination, platform, moduleName, overlayStyle, overwrite });
+    return { content: [{ type: "text", text: JSON.stringify(res, null, 2) }] };
   }
 );
 
