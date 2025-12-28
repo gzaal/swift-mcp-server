@@ -3,7 +3,7 @@ import { loadUnifiedIndex, buildUnifiedIndex } from "../utils/hybrid_index.js";
 
 export const HybridSearchSchema = z.object({
   query: z.string(),
-  sources: z.array(z.enum(["apple", "hig", "pattern"]).default("apple")).optional(),
+  sources: z.array(z.enum(["apple", "hig", "pattern", "tspl", "recipe"]).default("apple")).optional(),
   frameworks: z.array(z.string()).optional(),
   kinds: z.array(z.string()).optional(),
   topics: z.array(z.string()).optional(),
@@ -14,7 +14,7 @@ export const HybridSearchSchema = z.object({
 export type HybridSearchInput = z.infer<typeof HybridSearchSchema>;
 
 export async function hybridSearch({ query, sources, frameworks, kinds, topics, tags, limit = 10 }: HybridSearchInput) {
-  const use = new Set(sources && sources.length ? sources : ["apple", "hig", "pattern"]);
+  const use = new Set(sources && sources.length ? sources : ["apple", "hig", "pattern", "tspl", "recipe"]);
   const results: any[] = [];
 
   // Unified index (preferred)

@@ -5,12 +5,15 @@ import { CACHE_DIR } from "./cache.js";
 import { readFile } from "node:fs/promises";
 import { stripHtml, loadYamlDir } from "./index.js";
 import { parseAppleDocAtPath } from "../tools/apple_docs.js";
+import { parseTSPLFiles, type TSPLRecord } from "./tspl_index.js";
 
 export type UnifiedRecord = {
   _id: string;
-  source: "apple" | "hig" | "pattern" | "recipe";
+  source: "apple" | "hig" | "pattern" | "recipe" | "tspl";
   symbol?: string; // for Apple
-  title?: string; // for HIG/Patterns
+  title?: string; // for HIG/Patterns/TSPL
+  chapter?: string; // for TSPL
+  section?: string; // for TSPL
   framework?: string;
   kind?: string;
   topics?: string[];
@@ -99,12 +102,30 @@ export async function buildUnifiedIndex(): Promise<{ index: MiniSearch; count: n
     }
   } catch {}
 
+  // TSPL (Swift Programming Language book)
+  try {
+    const tsplRecords = await parseTSPLFiles();
+    for (const rec of tsplRecords) {
+      docs.push({
+        _id: rec._id,
+        source: "tspl",
+        title: rec.title,
+        chapter: rec.chapter,
+        section: rec.section,
+        summary: rec.summary,
+        snippet: rec.snippet,
+        url: rec.url,
+        path: rec.path,
+      });
+    }
+  } catch {}
+
   if (docs.length === 0) return null;
   const mini = new MiniSearch<UnifiedRecord>({
     idField: "_id",
-    fields: ["symbol", "title", "summary", "snippet", "framework", "kind", "topics", "tags"],
-    storeFields: ["_id", "source", "symbol", "title", "framework", "kind", "topics", "tags", "summary", "snippet", "url", "path", "id"],
-    searchOptions: { boost: { symbol: 5, title: 4, framework: 2, kind: 1 }, prefix: true, fuzzy: 0.1 },
+    fields: ["symbol", "title", "summary", "snippet", "framework", "kind", "topics", "tags", "chapter", "section"],
+    storeFields: ["_id", "source", "symbol", "title", "framework", "kind", "topics", "tags", "summary", "snippet", "url", "path", "id", "chapter", "section"],
+    searchOptions: { boost: { symbol: 5, title: 4, chapter: 3, framework: 2, kind: 1 }, prefix: true, fuzzy: 0.1 },
   });
   mini.addAll(docs);
   return { index: mini, count: docs.length };
@@ -124,9 +145,9 @@ export async function loadUnifiedIndex(): Promise<MiniSearch | null> {
     const txt = await (await import("node:fs/promises")).readFile(p, "utf8");
     const mini = MiniSearch.loadJSON(txt, {
       idField: "_id",
-      fields: ["symbol", "title", "summary", "snippet", "framework", "kind", "topics", "tags"],
-      storeFields: ["_id", "source", "symbol", "title", "framework", "kind", "topics", "tags", "summary", "snippet", "url", "path", "id"],
-      searchOptions: { boost: { symbol: 5, title: 4, framework: 2, kind: 1 }, prefix: true, fuzzy: 0.1 },
+      fields: ["symbol", "title", "summary", "snippet", "framework", "kind", "topics", "tags", "chapter", "section"],
+      storeFields: ["_id", "source", "symbol", "title", "framework", "kind", "topics", "tags", "summary", "snippet", "url", "path", "id", "chapter", "section"],
+      searchOptions: { boost: { symbol: 5, title: 4, chapter: 3, framework: 2, kind: 1 }, prefix: true, fuzzy: 0.1 },
     });
     return mini;
   } catch {

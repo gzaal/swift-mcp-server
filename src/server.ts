@@ -16,6 +16,7 @@ import { indexStatus } from "./tools/index_status.js";
 import { importDocsets } from "./tools/docsets_import.js";
 import { swiftRecipeLookup } from "./tools/recipes.js";
 import { swiftScaffoldModule } from "./tools/scaffold.js";
+import { docsPopulate, projectScan } from "./tools/docs_populate.js";
 
 const mcp = new McpServer({ name: "swift-mcp-server", version: "0.1.0" });
 
@@ -147,14 +148,14 @@ mcp.registerTool(
   }
 );
 
-// Hybrid search across Apple docs, HIG, and patterns
+// Hybrid search across Apple docs, HIG, patterns, TSPL, and recipes
 mcp.registerTool(
   "search_hybrid",
   {
-    description: "Hybrid search across Apple DocC, HIG, and curated patterns with facet filters; returns { results, facets } with facet counts.",
+    description: "Hybrid search across Apple DocC, HIG, TSPL (Swift book), curated patterns, and recipes with facet filters; returns { results, facets } with facet counts.",
     inputSchema: {
       query: z.string(),
-      sources: z.array(z.enum(["apple", "hig", "pattern"]).default("apple")).optional(),
+      sources: z.array(z.enum(["apple", "hig", "pattern", "tspl", "recipe"]).default("apple")).optional(),
       frameworks: z.array(z.string()).optional(),
       kinds: z.array(z.string()).optional(),
       topics: z.array(z.string()).optional(),
@@ -222,6 +223,38 @@ mcp.registerTool(
   },
   async ({ destination, platform, moduleName, overlayStyle, overwrite }) => {
     const res = await swiftScaffoldModule({ destination, platform, moduleName, overlayStyle, overwrite });
+    return { content: [{ type: "text", text: JSON.stringify(res, null, 2) }] };
+  }
+);
+
+// Auto-populate Apple docs from developer.apple.com
+mcp.registerTool(
+  "apple_docs_populate",
+  {
+    description: "Auto-fetch Apple documentation from developer.apple.com. Can target specific frameworks or auto-detect from a Swift project.",
+    inputSchema: {
+      frameworks: z.array(z.string()).optional(),
+      projectPath: z.string().optional(),
+      depth: z.number().min(1).max(3).optional(),
+      maxPerFramework: z.number().min(10).max(200).optional(),
+      rebuildIndex: z.boolean().optional(),
+    },
+  },
+  async (input) => {
+    const res = await docsPopulate(input);
+    return { content: [{ type: "text", text: JSON.stringify(res, null, 2) }] };
+  }
+);
+
+// Scan a Swift project for framework imports
+mcp.registerTool(
+  "swift_project_scan",
+  {
+    description: "Scan a Swift project directory to discover which frameworks are imported. Returns sorted list by priority.",
+    inputSchema: { projectPath: z.string() },
+  },
+  async ({ projectPath }) => {
+    const res = await projectScan(projectPath);
     return { content: [{ type: "text", text: JSON.stringify(res, null, 2) }] };
   }
 );
