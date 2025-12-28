@@ -41,6 +41,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Run unit tests
+        run: npm run test:unit
+
       - name: Install Swift tools (Homebrew)
         run: |
           brew install swift-format swiftformat swiftlint
@@ -78,3 +81,6 @@ jobs:
             'enum Status { case OK, not_found }' \
             > /tmp/ci.swift
           node -e "import('./dist/tools/lint.js').then(m=>m.lintRun({path:'/tmp/ci.swift'})).then(r=>{console.log(r); if(!r.ok){process.exit(1)}},e=>{console.error(e);process.exit(1)})"
+
+      - name: Run integration tests
+        run: npm run test:integration

@@ -1,0 +1,17 @@
+id: appkit-keyboard-focus
+title: AppKit Keyboard Focus Management
+tags:
+  - keyboard
+  - focus
+  - appkit
+  - responder
+summary: Handle keyboard focus and first responder in AppKit applications.
+snippet: |
+  override func becomeFirstResponder() -> Bool {
+      // Custom focus handling
+      return super.becomeFirstResponder()
+  }
+takeaways:
+  - Use becomeFirstResponder() to manage keyboard focus
+  - Override acceptsFirstResponder to allow focus
+  - Handle key events in keyDown(with:)

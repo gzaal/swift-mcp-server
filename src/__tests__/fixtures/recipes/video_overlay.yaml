@@ -1,0 +1,26 @@
+id: video-overlay-swiftui
+title: SwiftUI Video Overlay
+tags:
+  - video
+  - overlay
+  - swiftui
+  - avkit
+summary: Add SwiftUI overlays on top of AVPlayer video content.
+prerequisites:
+  - SwiftUI knowledge
+  - AVKit familiarity
+steps:
+  - Create an AVPlayer instance
+  - Wrap in VideoPlayer view
+  - Add overlay modifier with SwiftUI content
+snippet: |
+  VideoPlayer(player: player) {
+      VStack {
+          Spacer()
+          Text("Overlay Text")
+              .foregroundColor(.white)
+              .padding()
+      }
+  }
+references:
+  - https://developer.apple.com/documentation/avkit/videoplayer

@@ -1,0 +1,15 @@
+id: appkit-child-window
+title: AppKit Child Window Attachment
+tags:
+  - window
+  - appkit
+  - child
+summary: Attach and manage child windows in AppKit.
+snippet: |
+  parentWindow.addChildWindow(childWindow, ordered: .above)
+  // Later, to remove:
+  parentWindow.removeChildWindow(childWindow)
+takeaways:
+  - Child windows move with their parent
+  - Use ordered parameter to control z-ordering
+  - Remove child windows before closing parent
