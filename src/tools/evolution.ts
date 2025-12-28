@@ -29,15 +29,20 @@ function extractStatus(text: string): string {
 export async function evolutionLookup({ query, limit = 5 }: EvolutionLookupInput) {
   const base = join(getCacheDir(), "swift-evolution", "proposals");
   const results: any[] = [];
+  const seen = new Set<string>();
 
-  // If looks like SE-####, search exact
+  // If looks like SE-####, search for that number in filenames
   const m = query.trim().match(/SE[-\s]?(\d{4})/i);
   if (m) {
-    const id = `SE-${m[1]}`;
-    const matches = await searchFiles(base, ["**/*.md"], m[1], limit);
+    const searchNum = m[1];
+    const matches = await searchFiles(base, ["**/*.md"], searchNum, limit);
     for (const r of matches) {
+      const filename = basename(r.path);
+      const id = extractProposalId(filename); // Extract ID from THIS file, not query
+      if (seen.has(id)) continue;
+      seen.add(id);
       const text = await fileText(r.path);
-      const title = (text.match(/^#\s+(.+)$/m) || [])[1] || basename(r.path);
+      const title = (text.match(/^#\s+(.+)$/m) || [])[1] || filename;
       const status = extractStatus(text);
       results.push({ id, title, status, path: r.path });
     }
@@ -47,9 +52,11 @@ export async function evolutionLookup({ query, limit = 5 }: EvolutionLookupInput
   // Otherwise fuzzy by filename/title
   const matches = await searchFiles(base, ["**/*.md"], query, limit * 2);
   for (const r of matches) {
-    const text = await fileText(r.path);
     const filename = basename(r.path);
     const id = extractProposalId(filename);
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const text = await fileText(r.path);
     const title = (text.match(/^#\s+(.+)$/m) || [])[1] || filename;
     const status = extractStatus(text);
     results.push({ id, title, status, path: r.path });

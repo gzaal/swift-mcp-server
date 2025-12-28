@@ -30,10 +30,13 @@ export async function hybridSearch({ query, sources, frameworks, kinds, topics, 
       if (topics?.length) hits = hits.filter((h) => (h.topics || []).some((t: string) => topics.includes(t)));
       if (tags?.length) hits = hits.filter((h) => (h.tags || []).some((t: string) => tags.includes(t)));
 
-      // Deduplicate by path or symbol+source to avoid showing same doc twice
+      // Deduplicate by id/url/symbol - same doc can exist at different paths
       const seen = new Set<string>();
       for (const h of hits) {
-        const key = h.path || `${h.source}|${h.symbol || h.title}`;
+        // Prefer id or url for dedup (stable across different cache paths)
+        // Fall back to normalized symbol/title
+        const symbolKey = (h.symbol || h.title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        const key = h.id || h.url || `${h.source}|${symbolKey}`;
         if (seen.has(key)) continue;
         seen.add(key);
         results.push(h);
